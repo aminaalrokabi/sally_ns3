@@ -15,6 +15,7 @@ namespace sally {
 class RoutingProtocol : public aodv::RoutingProtocol,public olsr::RoutingProtocol
 {
   public:
+	RoutingProtocol (void);
 	static TypeId GetTypeId (void);
 	virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p,
 	                                      const Ipv4Header &header,
@@ -32,10 +33,13 @@ class RoutingProtocol : public aodv::RoutingProtocol,public olsr::RoutingProtoco
 	  virtual void NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address);
 	  virtual void NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address);
 	  virtual void SetIpv4 (Ptr<Ipv4> ipv4);
+	  virtual void DoInitialize();
 	  virtual void PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const;
 
 	  void DoDispose ();
 	  int64_t AssignStreams (int64_t stream);
+	  Ptr<Ipv4> m_ipv4;
+
 };
 
 }

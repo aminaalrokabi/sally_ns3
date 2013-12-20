@@ -164,10 +164,35 @@ TypeId RoutingProtocol::GetTypeId (void)
   return tid;
 }
 
-Ptr<Ipv4Route>
-RoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr)
+RoutingProtocol::RoutingProtocol ()
+  : m_ipv4 (0)
 {
-	return olsr::RoutingProtocol::RouteOutput(p, header, oif, sockerr);
+  NS_LOG_FUNCTION (this);
+}
+
+void
+RoutingProtocol::DoInitialize (void)
+{
+	olsr::RoutingProtocol::DoInitialize();
+	aodv::RoutingProtocol::DoInitialize();
+}
+
+Ptr<Ipv4Route>
+RoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, enum Socket::SocketErrno &sockerr)
+{
+	Ptr<Ipv4Route> route = olsr::RoutingProtocol::RouteOutput(p, header, oif, sockerr);
+	if (route) {
+		sockerr = Socket::ERROR_NOTERROR;
+		return route;
+	} else {
+		Ptr<Ipv4Route> route = aodv::RoutingProtocol::RouteOutput(p, header, oif, sockerr);
+		if (route) {
+			sockerr = Socket::ERROR_NOTERROR;
+			return route;
+		}
+	}
+	sockerr = Socket::ERROR_NOROUTETOHOST;
+    return 0;
 }
 
 bool
@@ -176,37 +201,102 @@ RoutingProtocol::RouteInput  (Ptr<const Packet> p,
                                    UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                                    LocalDeliverCallback lcb, ErrorCallback ecb)
 {
-	return olsr::RoutingProtocol::RouteInput(p, header, idev, ucb, mcb, lcb, ecb);
+
+	NS_LOG_FUNCTION (this << p << header << idev << &ucb << &mcb << &lcb << &ecb);
+	  bool retVal = false;
+	  NS_LOG_LOGIC ("RouteInput logic for node: " << m_ipv4->GetObject<Node> ()->GetId ());
+
+	  NS_ASSERT (m_ipv4 != 0);
+	  // Check if input device supports IP
+	  NS_ASSERT (m_ipv4->GetInterfaceForDevice (idev) >= 0);
+	  uint32_t iif = m_ipv4->GetInterfaceForDevice (idev);
+
+	  retVal = m_ipv4->IsDestinationAddress (header.GetDestination (), iif);
+	  if (retVal == true)
+	    {
+	      NS_LOG_LOGIC ("Address "<< header.GetDestination () << " is a match for local delivery");
+	      if (header.GetDestination ().IsMulticast ())
+	        {
+	          Ptr<Packet> packetCopy = p->Copy ();
+	          lcb (packetCopy, header, iif);
+	          retVal = true;
+	          // Fall through
+	        }
+	      else
+	        {
+	          lcb (p, header, iif);
+	          return true;
+	        }
+	    }
+	  // Check if input device supports IP forwarding
+	  if (m_ipv4->IsForwarding (iif) == false)
+	    {
+	      NS_LOG_LOGIC ("Forwarding disabled for this interface");
+	      ecb (p, header, Socket::ERROR_NOROUTETOHOST);
+	      return false;
+	    }
+
+	  LocalDeliverCallback downstreamLcb = lcb;
+	    if (retVal == true)
+	      {
+	        downstreamLcb = MakeNullCallback<void, Ptr<const Packet>, const Ipv4Header &, uint32_t > ();
+	      }
+
+	if (olsr::RoutingProtocol::RouteInput(p, header, idev, ucb, mcb, downstreamLcb, ecb)) {
+		return true;
+	} else if (aodv::RoutingProtocol::RouteInput(p, header, idev, ucb, mcb, downstreamLcb, ecb)) {
+		return true;
+	} else {
+		return retVal;
+	}
 }
 
 void
 RoutingProtocol::NotifyInterfaceUp (uint32_t i)
-{}
+{
+	olsr::RoutingProtocol::NotifyInterfaceUp(i);
+	aodv::RoutingProtocol::NotifyInterfaceUp(i);
+}
 void
 RoutingProtocol::NotifyInterfaceDown (uint32_t i)
-{}
+{
+	olsr::RoutingProtocol::NotifyInterfaceDown(i);
+	aodv::RoutingProtocol::NotifyInterfaceDown(i);
+}
 void
 RoutingProtocol::NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address)
-{}
+{
+	olsr::RoutingProtocol::NotifyAddAddress(interface, address);
+	aodv::RoutingProtocol::NotifyAddAddress(interface, address);
+}
 void
 RoutingProtocol::NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address)
-{}
+{
+	olsr::RoutingProtocol::NotifyRemoveAddress(interface, address);
+	aodv::RoutingProtocol::NotifyRemoveAddress(interface, address);
+}
 
 void
 RoutingProtocol::SetIpv4 (Ptr<Ipv4> ipv4)
 {
 	olsr::RoutingProtocol::SetIpv4(ipv4);
+	aodv::RoutingProtocol::SetIpv4(ipv4);
+
+	m_ipv4 = ipv4;
 }
 
 void
 RoutingProtocol::PrintRoutingTable(Ptr<OutputStreamWrapper> stream) const
 {
 	olsr::RoutingProtocol::PrintRoutingTable(stream);
+	aodv::RoutingProtocol::PrintRoutingTable(stream);
 }
 
 void RoutingProtocol::DoDispose ()
 {
 	olsr::RoutingProtocol::DoDispose();
+	aodv::RoutingProtocol::DoDispose();
+	m_ipv4 = 0;
 }
 
 int64_t
@@ -214,6 +304,7 @@ RoutingProtocol::AssignStreams (int64_t stream)
 {
   NS_LOG_FUNCTION (this << stream);
   olsr::RoutingProtocol::m_uniformRandomVariable->SetStream (stream);
+  aodv::RoutingProtocol::m_uniformRandomVariable->SetStream (stream);
   return 1;
 }
 
