@@ -1,15 +1,10 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
-# def options(opt):
-#     pass
-
-# def configure(conf):
-#     conf.check_nonfatal(header_name='stdint.h', define_name='HAVE_STDINT_H')
-
 def build(bld):
-    module = bld.create_ns3_module('sally', ['core'])
+    module = bld.create_ns3_module('sally', ['olsr', 'aodv'])
+    module.includes = '.'
     module.source = [
-        'model/sally.cc',
+        'model/sally-routing-protocol.cc',
         'helper/sally-helper.cc',
         ]
 
@@ -21,7 +16,7 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'sally'
     headers.source = [
-        'model/sally.h',
+        'model/sally-routing-protocol.h',
         'helper/sally-helper.h',
         ]
 
