@@ -17,6 +17,10 @@
 #include "ns3/adhoc-wifi-mac.h"
 #include "ns3/string.h"
 #include "ns3/pointer.h"
+#include "ns3/ipv4.h"
+#include "ns3/ipv4-route.h"
+#include "ns3/node.h"
+#include "ns3/ipv4-static-routing.h"
 
 namespace ns3 {
 namespace sally {
@@ -39,6 +43,10 @@ TypeId RoutingProtocol::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::sally::RoutingProtocol")
 	.SetParent<Ipv4RoutingProtocol> ()
     .AddConstructor<RoutingProtocol> ()
+         .AddAttribute ("HelloInterval aodv", "HELLO messages emission interval.",
+                       TimeValue (Seconds (1)),
+                       MakeTimeAccessor (&aodv::RoutingProtocol::HelloInterval),
+                       MakeTimeChecker ())
         .AddAttribute ("RreqRetries", "Maximum number of retransmissions of RREQ to discover a route",
                        UintegerValue (2),
                        MakeUintegerAccessor (&aodv::RoutingProtocol::RreqRetries),
@@ -175,6 +183,7 @@ RoutingProtocol::DoInitialize (void)
 {
 	olsr::RoutingProtocol::DoInitialize();
 	aodv::RoutingProtocol::DoInitialize();
+	Ipv4RoutingProtocol::DoInitialize ();
 }
 
 Ptr<Ipv4Route>
@@ -185,10 +194,10 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDe
 		sockerr = Socket::ERROR_NOTERROR;
 		return route;
 	} else {
-		Ptr<Ipv4Route> route = aodv::RoutingProtocol::RouteOutput(p, header, oif, sockerr);
-		if (route) {
+		Ptr<Ipv4Route> route_2 = aodv::RoutingProtocol::RouteOutput(p, header, oif, sockerr);
+		if (route_2) {
 			sockerr = Socket::ERROR_NOTERROR;
-			return route;
+			return route_2;
 		}
 	}
 	sockerr = Socket::ERROR_NOROUTETOHOST;

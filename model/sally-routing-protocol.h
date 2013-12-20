@@ -12,10 +12,10 @@ namespace sally {
 ///
 /// \brief SALLY routing protocol for IPv4
 ///
-class RoutingProtocol : public aodv::RoutingProtocol,public olsr::RoutingProtocol
+class RoutingProtocol : public olsr::RoutingProtocol, public aodv::RoutingProtocol
 {
   public:
-	RoutingProtocol (void);
+	RoutingProtocol ();
 	static TypeId GetTypeId (void);
 	virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p,
 	                                      const Ipv4Header &header,
@@ -33,7 +33,7 @@ class RoutingProtocol : public aodv::RoutingProtocol,public olsr::RoutingProtoco
 	  virtual void NotifyAddAddress (uint32_t interface, Ipv4InterfaceAddress address);
 	  virtual void NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address);
 	  virtual void SetIpv4 (Ptr<Ipv4> ipv4);
-	  virtual void DoInitialize();
+	  void DoInitialize();
 	  virtual void PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const;
 
 	  void DoDispose ();
