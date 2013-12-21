@@ -2,36 +2,7 @@ Only in src/antenna/bindings: callbacks_list.pyc
 Only in src/antenna/bindings: modulegen__gcc_ILP32.pyc
 Only in src/aodv/bindings: callbacks_list.pyc
 Only in src/aodv/bindings: modulegen__gcc_ILP32.pyc
-diff -rauB src/aodv/model/aodv-routing-protocol.h /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.h
---- src/aodv/model/aodv-routing-protocol.h	2013-12-20 01:00:38.060884190 +0000
-+++ /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.h	2013-11-15 21:50:31.000000000 +0000
-@@ -50,7 +50,7 @@
-  * 
-  * \brief AODV routing protocol
-  */
--class RoutingProtocol : virtual public Ipv4RoutingProtocol
-+class RoutingProtocol : public Ipv4RoutingProtocol
- {
- public:
-   static TypeId GetTypeId (void);
-@@ -101,7 +101,7 @@
-   */
-   int64_t AssignStreams (int64_t stream);
- 
--public:
-+private:
-   ///\name Protocol parameters.
-   //\{
-   uint32_t RreqRetries;             ///< Maximum number of retransmissions of RREQ with TTL = NetDiameter to discover a route
-@@ -164,7 +164,7 @@
-   /// Number of RERRs used for RERR rate control
-   uint16_t m_rerrCount;
- 
--public:
-+private:
-   /// Start protocol operation
-   void Start ();
-   /// Queue packet and send route request
+Only in /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model: .aodv-routing-protocol.h.swp
 Only in src/applications/bindings: callbacks_list.pyc
 Only in src/applications/bindings: modulegen_customizations.pyc
 Only in src/applications/bindings: modulegen__gcc_ILP32.pyc
@@ -45,18 +16,6 @@ Only in src/config-store/bindings: modulegen__gcc_ILP32.pyc
 Only in src/core/bindings: callbacks_list.pyc
 Only in src/core/bindings: modulegen_customizations.pyc
 Only in src/core/bindings: modulegen__gcc_ILP32.pyc
-diff -rauB src/core/model/object.h /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/core/model/object.h
---- src/core/model/object.h	2013-12-20 01:01:49.788886853 +0000
-+++ /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/core/model/object.h	2013-11-15 21:50:32.000000000 +0000
-@@ -370,7 +370,7 @@
-   Ptr<Object> found = DoGetObject (T::GetTypeId ());
-   if (found != 0)
-     {
--      return Ptr<T> (dynamic_cast<T *> (PeekPointer (found)));
-+      return Ptr<T> (static_cast<T *> (PeekPointer (found)));
-     }
-   return 0;
- }
 Only in src: .cproject
 Only in src/csma/bindings: callbacks_list.pyc
 Only in src/csma/bindings: modulegen_customizations.pyc
@@ -79,6 +38,17 @@ Only in src/flow-monitor/bindings: callbacks_list.pyc
 Only in src/flow-monitor/bindings: modulegen__gcc_ILP32.pyc
 Only in src/internet/bindings: callbacks_list.pyc
 Only in src/internet/bindings: modulegen__gcc_ILP32.pyc
+diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/internet/model/ipv4-list-routing.h src/internet/model/ipv4-list-routing.h
+--- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/internet/model/ipv4-list-routing.h	2013-11-15 21:50:31.000000000 +0000
++++ src/internet/model/ipv4-list-routing.h	2013-12-21 01:59:18.458394679 +0000
+@@ -96,6 +96,7 @@
+   typedef std::list<Ipv4RoutingProtocolEntry> Ipv4RoutingProtocolList;
+   Ipv4RoutingProtocolList m_routingProtocols;
+   static bool Compare (const Ipv4RoutingProtocolEntry& a, const Ipv4RoutingProtocolEntry& b);
++protected:
+   Ptr<Ipv4> m_ipv4;
+ 
+ };
 Only in src/lte/bindings: callbacks_list.pyc
 Only in src/lte/bindings: modulegen__gcc_ILP32.pyc
 Only in src/mesh/bindings: callbacks_list.pyc
@@ -93,27 +63,6 @@ Only in src/nix-vector-routing/bindings: callbacks_list.pyc
 Only in src/nix-vector-routing/bindings: modulegen__gcc_ILP32.pyc
 Only in src/olsr/bindings: callbacks_list.pyc
 Only in src/olsr/bindings: modulegen__gcc_ILP32.pyc
-diff -rauB src/olsr/model/olsr-routing-protocol.h /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/olsr/model/olsr-routing-protocol.h
---- src/olsr/model/olsr-routing-protocol.h	2013-12-20 01:00:51.404884687 +0000
-+++ /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/olsr/model/olsr-routing-protocol.h	2013-11-15 21:50:32.000000000 +0000
-@@ -75,7 +75,7 @@
- ///
- /// \brief OLSR routing protocol for IPv4
- ///
--class RoutingProtocol : virtual public Ipv4RoutingProtocol
-+class RoutingProtocol : public Ipv4RoutingProtocol
- {
- public:
-   friend class OlsrMprTestCase;
-@@ -134,7 +134,7 @@
- 
- protected:
-   virtual void DoInitialize (void);
--public:
-+private:
-   std::map<Ipv4Address, RoutingTableEntry> m_table; ///< Data structure for the routing table.
- 
-   Ptr<Ipv4StaticRouting> m_hnaRoutingTable;
 Only in src/point-to-point/bindings: callbacks_list.pyc
 Only in src/point-to-point/bindings: modulegen_customizations.pyc
 Only in src/point-to-point/bindings: modulegen__gcc_ILP32.pyc
