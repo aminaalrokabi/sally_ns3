@@ -11,6 +11,10 @@
 #include "ns3/node.h"
 #include "ns3/ipv4-static-routing.h"
 #include "sally-routing-protocol.h"
+#include "ns3/olsr-routing-protocol.h"
+#include "ns3/aodv-routing-protocol.h"
+
+NS_LOG_COMPONENT_DEFINE ("SallyRouting");
 
 namespace ns3 {
 namespace sally {
@@ -42,10 +46,14 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDe
   NS_LOG_FUNCTION (this << p << header.GetDestination () << header.GetSource () << oif << sockerr);
   Ptr<Ipv4Route> route;
   int16_t priority;
-  Ptr<Ipv4RoutingProtocol> protocol1 = GetRoutingProtocol(0, priority);
 
-  route = protocol1->RouteOutput (p, header, oif, sockerr);
-  if (route) {
+
+  Ptr<olsr::RoutingProtocol> olsr_prot = DynamicCast<olsr::RoutingProtocol> (GetRoutingProtocol(1, priority));
+
+  Ptr<aodv::RoutingProtocol> aodv_prot = DynamicCast<aodv::RoutingProtocol> (GetRoutingProtocol(0, priority));
+
+  if (olsr_prot->m_willingness < 3 ) {
+	  route = aodv_prot->RouteOutput (p, header, oif, sockerr);
 	  sockerr = Socket::ERROR_NOTERROR;
 	  return route;
   }
@@ -58,6 +66,8 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<
                              UnicastForwardCallback ucb, MulticastForwardCallback mcb,
                              LocalDeliverCallback lcb, ErrorCallback ecb)
 {
+  int16_t priority;
+
   NS_LOG_FUNCTION (this << p << header << idev << &ucb << &mcb << &lcb << &ecb);
   bool retVal = false;
   NS_LOG_LOGIC ("RouteInput logic for node: " << m_ipv4->GetObject<Node> ()->GetId ());
@@ -99,9 +109,12 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<
     {
       downstreamLcb = MakeNullCallback<void, Ptr<const Packet>, const Ipv4Header &, uint32_t > ();
     }
-  int16_t priority;
-  Ptr<Ipv4RoutingProtocol> protocol1 = GetRoutingProtocol(0, priority);
-  if (protocol1->RouteInput (p, header, idev, ucb, mcb, downstreamLcb, ecb)) {
+
+  Ptr<olsr::RoutingProtocol> olsr_prot = DynamicCast<olsr::RoutingProtocol> (GetRoutingProtocol(1, priority));
+
+  Ptr<aodv::RoutingProtocol> aodv_prot = DynamicCast<aodv::RoutingProtocol> (GetRoutingProtocol(0, priority));
+
+  if (olsr_prot->m_willingness < 3 && aodv_prot->RouteInput (p, header, idev, ucb, mcb, downstreamLcb, ecb)) {
 	  return true;
   }
   return retVal;

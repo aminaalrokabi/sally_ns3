@@ -1,7 +1,7 @@
 # -*- Mode: python; py-indent-offset: 4; indent-tabs-mode: nil; coding: utf-8; -*-
 
 def build(bld):
-    module = bld.create_ns3_module('sally', ['olsr', 'aodv'])
+    module = bld.create_ns3_module('sally', ['internet', 'wifi', 'applications', 'mesh', 'point-to-point', 'virtual-net-device'])
     module.includes = '.'
     module.source = [
         'model/sally-routing-protocol.cc',

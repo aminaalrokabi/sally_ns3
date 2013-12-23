@@ -40,6 +40,18 @@ public:
    * Destroy an Ipv4ListRoutingHelper.
    */
   virtual ~SallyHelper ();
+  SallyHelper (const SallyHelper &);
+    /**
+     * \internal
+     * \returns pointer to clone of this Ipv4ListRoutingHelper
+     *
+     * This method is mainly for internal use by the other helpers;
+     * clients are expected to free the dynamic memory allocated by this method
+     */
+  SallyHelper* Copy (void) const;
+  void AddOlsr () const;
+  void AddAodv () const;
+  virtual Ptr<Ipv4RoutingProtocol> Create (Ptr<Node> node) const;
 private:
   /**
    * \internal

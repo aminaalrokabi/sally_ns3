@@ -20,26 +20,44 @@
 #include "sally-helper.h"
 #include "ns3/sally-routing-protocol.h"
 #include "ns3/node.h"
+
+#include "ns3/aodv-routing-protocol.h"
+#include "ns3/olsr-routing-protocol.h"
 #include "ns3/aodv-helper.h"
 #include "ns3/olsr-helper.h"
 
 namespace ns3
 {
 
-SallyHelper::SallyHelper()
+SallyHelper::SallyHelper():Ipv4ListRoutingHelper ()
 {
-  OlsrHelper olsr;
-  AodvHelper aodv;
-  Add (olsr, 20);
-  Add (aodv, 30);
 }
 
 SallyHelper::~SallyHelper()
 {
 }
 
+SallyHelper::SallyHelper (const SallyHelper &o)
+{
+  OlsrHelper olsr;
+  AodvHelper aodv;
+  std::list<std::pair<const Ipv4RoutingHelper *, int16_t> >::const_iterator i;
+  for (i = o.m_list.begin (); i != o.m_list.end (); ++i)
+    {
+      m_list.push_back (std::make_pair (const_cast<const Ipv4RoutingHelper *> (i->first->Copy ()), i->second));
+    }
+  m_list.push_back (std::make_pair (const_cast<const ns3::OlsrHelper *> (olsr.Copy ()), 20));
+  m_list.push_back (std::make_pair (const_cast<const ns3::AodvHelper *> (aodv.Copy ()), 30));
+}
+
+SallyHelper*
+SallyHelper::Copy (void) const
+{
+  return new SallyHelper (*this);
+}
+
 Ptr<Ipv4RoutingProtocol>
-Ipv4ListRoutingHelper::Create (Ptr<Node> node) const
+SallyHelper::Create (Ptr<Node> node) const
 {
   Ptr<ns3::sally::RoutingProtocol> list = CreateObject<ns3::sally::RoutingProtocol> ();
   for (std::list<std::pair<const Ipv4RoutingHelper *, int16_t> >::const_iterator i = m_list.begin ();
