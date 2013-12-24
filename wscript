@@ -4,7 +4,6 @@ def build(bld):
     module = bld.create_ns3_module('sally', ['internet', 'wifi', 'applications', 'mesh', 'point-to-point', 'virtual-net-device'])
     module.includes = '.'
     module.source = [
-        'model/sally-routing-protocol.cc',
         'helper/sally-helper.cc',
         ]
 
@@ -16,7 +15,6 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'sally'
     headers.source = [
-        'model/sally-routing-protocol.h',
         'helper/sally-helper.h',
         ]
 

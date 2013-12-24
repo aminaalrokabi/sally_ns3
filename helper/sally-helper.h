@@ -50,7 +50,7 @@ public:
      */
   SallyHelper* Copy (void) const;
   virtual Ptr<Ipv4RoutingProtocol> Create (Ptr<Node> node) const;
-  int number_of_low_nodes;
+  void SetNumberHybridNodes(int num);
 private:
   /**
    * \internal
@@ -59,6 +59,7 @@ private:
    */
   SallyHelper &operator = (const SallyHelper &o);
   std::list<std::pair<const Ipv4RoutingHelper *,int16_t> > m_list;
+  int number_of_hybrid_nodes;
 };
 }
 

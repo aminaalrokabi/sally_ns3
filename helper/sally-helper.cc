@@ -18,7 +18,6 @@
  * Authors: Pavel Boyko <boyko@iitp.ru>, written after OlsrHelper by Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
 #include "sally-helper.h"
-#include "ns3/sally-routing-protocol.h"
 #include "ns3/node.h"
 
 #include "ns3/aodv-routing-protocol.h"
@@ -32,12 +31,17 @@ namespace ns3
 {
 
 SallyHelper::SallyHelper():
-		Ipv4ListRoutingHelper (), number_of_low_nodes(0)
+		Ipv4ListRoutingHelper (), number_of_hybrid_nodes(0)
 {
 }
 
 SallyHelper::~SallyHelper()
 {
+}
+
+void
+SallyHelper::SetNumberHybridNodes(int num) {
+	number_of_hybrid_nodes = num;
 }
 
 SallyHelper::SallyHelper (const SallyHelper &o)
@@ -52,7 +56,7 @@ SallyHelper::SallyHelper (const SallyHelper &o)
 
   m_list.push_back (std::make_pair (const_cast<const ns3::OlsrHelper *> (olsr.Copy ()), 20));
   m_list.push_back (std::make_pair (const_cast<const ns3::AodvHelper *> (aodv.Copy ()), 30));
-  number_of_low_nodes = o.number_of_low_nodes;
+  number_of_hybrid_nodes = o.number_of_hybrid_nodes;
 }
 
 SallyHelper*
@@ -65,22 +69,21 @@ Ptr<Ipv4RoutingProtocol>
 SallyHelper::Create (Ptr<Node> node) const
 {
   static int num_created = 0;
-  if (num_created < number_of_low_nodes) {
-	  Config::SetDefault ("ns3::olsr::RoutingProtocol::Willingness", EnumValue (0));
-  } else {
-	  Config::SetDefault ("ns3::olsr::RoutingProtocol::Willingness", EnumValue (3));
-  }
-
-  num_created++;
-
-  Ptr<ns3::sally::RoutingProtocol> list = CreateObject<ns3::sally::RoutingProtocol> ();
+  Ptr<Ipv4ListRouting> list = CreateObject<Ipv4ListRouting> ();
   for (std::list<std::pair<const Ipv4RoutingHelper *, int16_t> >::const_iterator i = m_list.begin ();
-       i != m_list.end (); ++i)
-    {
-      Ptr<Ipv4RoutingProtocol> prot = i->first->Create (node);
-      list->AddRoutingProtocol (prot,i->second);
-    }
+		  i != m_list.end (); ++i)
+  {
+	  Ptr<Ipv4RoutingProtocol> prot = i->first->Create (node);
+	  if (prot->GetInstanceTypeId().GetName() == "ns3::aodv::RoutingProtocol") {
+		  if (num_created >= number_of_hybrid_nodes) {
+			  continue;
+		  }
+	  }
+	  list->AddRoutingProtocol (prot,i->second);
+  }
+  num_created++;
   return list;
+
 }
 
 }
