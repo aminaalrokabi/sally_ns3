@@ -75,8 +75,6 @@
 #include "ns3/config-store-module.h"
 #include "ns3/wifi-module.h"
 #include "ns3/internet-module.h"
-#include "ns3/aodv-helper.h"
-#include "ns3/olsr-helper.h"
 #include "ns3/sally-helper.h"
 
 #include "ns3/ipv4-static-routing-helper.h"
@@ -124,6 +122,7 @@ int main (int argc, char *argv[])
   double interval = 1.0; // seconds
   bool verbose = false;
   bool tracing = true;
+  int numHybridNodes = 0;
 
   CommandLine cmd;
 
@@ -137,6 +136,8 @@ int main (int argc, char *argv[])
   cmd.AddValue ("numNodes", "number of nodes", numNodes);
   cmd.AddValue ("sinkNode", "Receiver node number", sinkNode);
   cmd.AddValue ("sourceNode", "Sender node number", sourceNode);
+  cmd.AddValue("numHybridNodes", "Number of hybrid nodes to use", numHybridNodes);
+  cmd.Parse (argc, argv);
 
   cmd.Parse (argc, argv);
   // Convert to time object
@@ -194,6 +195,7 @@ int main (int argc, char *argv[])
 
   // Enable AODV
   SallyHelper sally;
+  sally.SetNumberHybridNodes(numHybridNodes);
 
   Ipv4StaticRoutingHelper staticRouting;
 
