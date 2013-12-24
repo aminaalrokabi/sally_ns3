@@ -49,9 +49,8 @@ public:
      * clients are expected to free the dynamic memory allocated by this method
      */
   SallyHelper* Copy (void) const;
-  void AddOlsr () const;
-  void AddAodv () const;
   virtual Ptr<Ipv4RoutingProtocol> Create (Ptr<Node> node) const;
+  int number_of_low_nodes;
 private:
   /**
    * \internal
@@ -60,7 +59,6 @@ private:
    */
   SallyHelper &operator = (const SallyHelper &o);
   std::list<std::pair<const Ipv4RoutingHelper *,int16_t> > m_list;
-
 };
 }
 

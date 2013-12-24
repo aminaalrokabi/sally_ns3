@@ -30,16 +30,6 @@ TypeId RoutingProtocol::GetTypeId (void)
   return tid;
 }
 
-RoutingProtocol::RoutingProtocol ()
-{
-  NS_LOG_FUNCTION (this);
-}
-
-RoutingProtocol::~RoutingProtocol ()
-{
-  NS_LOG_FUNCTION (this);
-}
-
 Ptr<Ipv4Route>
 RoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, enum Socket::SocketErrno &sockerr)
 {
@@ -49,16 +39,17 @@ RoutingProtocol::RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDe
 
 
   Ptr<olsr::RoutingProtocol> olsr_prot = DynamicCast<olsr::RoutingProtocol> (GetRoutingProtocol(1, priority));
-
   Ptr<aodv::RoutingProtocol> aodv_prot = DynamicCast<aodv::RoutingProtocol> (GetRoutingProtocol(0, priority));
 
-  if (olsr_prot->m_willingness < 3 ) {
+  if (olsr_prot->m_willingness < 3) {
 	  route = aodv_prot->RouteOutput (p, header, oif, sockerr);
-	  sockerr = Socket::ERROR_NOTERROR;
-	  return route;
+	  if (route) {
+		  sockerr = Socket::ERROR_NOTERROR;
+		  return route;
+	  }
   }
-  sockerr = Socket::ERROR_NOROUTETOHOST;
-  return 0;
+	  sockerr = Socket::ERROR_NOROUTETOHOST;
+	  return 0;
 }
 
 bool
@@ -111,11 +102,12 @@ RoutingProtocol::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<
     }
 
   Ptr<olsr::RoutingProtocol> olsr_prot = DynamicCast<olsr::RoutingProtocol> (GetRoutingProtocol(1, priority));
-
   Ptr<aodv::RoutingProtocol> aodv_prot = DynamicCast<aodv::RoutingProtocol> (GetRoutingProtocol(0, priority));
 
-  if (olsr_prot->m_willingness < 3 && aodv_prot->RouteInput (p, header, idev, ucb, mcb, downstreamLcb, ecb)) {
-	  return true;
+  if (olsr_prot->m_willingness < 3) {
+	  if (aodv_prot->RouteInput (p, header, idev, ucb, mcb, downstreamLcb, ecb)) {
+		  return true;
+	  }
   }
   return retVal;
 }

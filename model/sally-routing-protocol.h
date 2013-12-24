@@ -16,9 +16,6 @@ class RoutingProtocol: public Ipv4ListRouting
 	public:
 	  static TypeId GetTypeId (void);
 
-	  RoutingProtocol ();
-	  virtual ~RoutingProtocol ();
-
 	  // Below are from Ipv4RoutingProtocol
 	  virtual Ptr<Ipv4Route> RouteOutput (Ptr<Packet> p, const Ipv4Header &header, Ptr<NetDevice> oif, Socket::SocketErrno &sockerr);
 

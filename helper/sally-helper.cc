@@ -25,11 +25,14 @@
 #include "ns3/olsr-routing-protocol.h"
 #include "ns3/aodv-helper.h"
 #include "ns3/olsr-helper.h"
+#include "ns3/enum.h"
+#include "ns3/config.h"
 
 namespace ns3
 {
 
-SallyHelper::SallyHelper():Ipv4ListRoutingHelper ()
+SallyHelper::SallyHelper():
+		Ipv4ListRoutingHelper (), number_of_low_nodes(0)
 {
 }
 
@@ -46,8 +49,10 @@ SallyHelper::SallyHelper (const SallyHelper &o)
     {
       m_list.push_back (std::make_pair (const_cast<const Ipv4RoutingHelper *> (i->first->Copy ()), i->second));
     }
+
   m_list.push_back (std::make_pair (const_cast<const ns3::OlsrHelper *> (olsr.Copy ()), 20));
   m_list.push_back (std::make_pair (const_cast<const ns3::AodvHelper *> (aodv.Copy ()), 30));
+  number_of_low_nodes = o.number_of_low_nodes;
 }
 
 SallyHelper*
@@ -59,6 +64,15 @@ SallyHelper::Copy (void) const
 Ptr<Ipv4RoutingProtocol>
 SallyHelper::Create (Ptr<Node> node) const
 {
+  static int num_created = 0;
+  if (num_created < number_of_low_nodes) {
+	  Config::SetDefault ("ns3::olsr::RoutingProtocol::Willingness", EnumValue (0));
+  } else {
+	  Config::SetDefault ("ns3::olsr::RoutingProtocol::Willingness", EnumValue (3));
+  }
+
+  num_created++;
+
   Ptr<ns3::sally::RoutingProtocol> list = CreateObject<ns3::sally::RoutingProtocol> ();
   for (std::list<std::pair<const Ipv4RoutingHelper *, int16_t> >::const_iterator i = m_list.begin ();
        i != m_list.end (); ++i)
