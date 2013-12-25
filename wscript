@@ -4,7 +4,9 @@ def build(bld):
     module = bld.create_ns3_module('sally', ['internet', 'wifi', 'applications', 'mesh', 'point-to-point', 'virtual-net-device'])
     module.includes = '.'
     module.source = [
+    	'model/solsr-routing-protocol.cc',
         'helper/sally-helper.cc',
+        'helper/solsr-helper.cc',
         ]
 
     module_test = bld.create_ns3_module_test_library('sally')
@@ -15,6 +17,8 @@ def build(bld):
     headers = bld(features='ns3header')
     headers.module = 'sally'
     headers.source = [
+    	'model/solsr-routing-protocol.h',
+		'helper/solsr-helper.h',
         'helper/sally-helper.h',
         ]
 

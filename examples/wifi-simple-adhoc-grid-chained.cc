@@ -78,7 +78,7 @@
 #include "ns3/aodv-helper.h"
 #include "ns3/olsr-helper.h"
 #include "ns3/sally-helper.h"
-
+#include "ns3/flow-monitor-helper.h"
 #include "ns3/ipv4-static-routing-helper.h"
 #include "ns3/ipv4-list-routing-helper.h"
 
@@ -118,9 +118,9 @@ int main (int argc, char *argv[])
   double distance = 500;  // m
   uint32_t packetSize = 1000; // bytes
   uint32_t numPackets = 1;
-  uint32_t numNodes = 10;  // by default, 5x5
+  uint32_t numNodes = 25;  // by default, 5x5
   uint32_t sinkNode = 0;
-  uint32_t sourceNode = 9;
+  uint32_t sourceNode = 24;
   double interval = 1.0; // seconds
   bool verbose = false;
   bool tracing = true;
@@ -233,6 +233,10 @@ int main (int argc, char *argv[])
       // To do-- enable an IP-level trace that shows forwarding events only
     }
 
+  Ptr<FlowMonitor> flowMon;
+      	FlowMonitorHelper flowMonHelper;
+      	flowMon = flowMonHelper.InstallAll();
+
   // Give AODV time to converge-- 30 seconds perhaps
   Simulator::Schedule (Seconds (30.0), &GenerateTraffic, 
                        source, packetSize, numPackets, interPacketInterval);
@@ -242,6 +246,7 @@ int main (int argc, char *argv[])
 
   Simulator::Stop (Seconds (32.0));
   Simulator::Run ();
+  flowMon->SerializeToXmlFile("myglobalroutin.flowmonitor", true, true);
   Simulator::Destroy ();
 
   return 0;

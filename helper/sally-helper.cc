@@ -24,6 +24,7 @@
 #include "ns3/olsr-routing-protocol.h"
 #include "ns3/aodv-helper.h"
 #include "ns3/olsr-helper.h"
+#include "ns3/solsr-helper.h"
 #include "ns3/enum.h"
 #include "ns3/config.h"
 
@@ -46,7 +47,7 @@ SallyHelper::SetNumberHybridNodes(int num) {
 
 SallyHelper::SallyHelper (const SallyHelper &o)
 {
-  OlsrHelper olsr;
+  SOlsrHelper olsr;
   AodvHelper aodv;
   std::list<std::pair<const Ipv4RoutingHelper *, int16_t> >::const_iterator i;
   for (i = o.m_list.begin (); i != o.m_list.end (); ++i)
@@ -54,7 +55,7 @@ SallyHelper::SallyHelper (const SallyHelper &o)
       m_list.push_back (std::make_pair (const_cast<const Ipv4RoutingHelper *> (i->first->Copy ()), i->second));
     }
 
-  m_list.push_back (std::make_pair (const_cast<const ns3::OlsrHelper *> (olsr.Copy ()), 20));
+  m_list.push_back (std::make_pair (const_cast<const ns3::SOlsrHelper *> (olsr.Copy ()), 20));
   m_list.push_back (std::make_pair (const_cast<const ns3::AodvHelper *> (aodv.Copy ()), 30));
   number_of_hybrid_nodes = o.number_of_hybrid_nodes;
 }

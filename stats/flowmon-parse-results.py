@@ -34,9 +34,7 @@ class Histogram(object):
                 self.bins.append( (float(bin.get("start")), float(bin.get("width")), int(bin.get("count"))) )
 
 class Flow(object):
-    __slots__ = ['flowId', 'delayMean', 'jitterMean', 'packetLossRatio', 'rxBitrate', 'txBitrate',
-                 'fiveTuple', 'packetSizeMean', 'probe_stats_unsorted',
-                 'hopCount', 'flowInterruptionsHistogram', 'rx_duration']
+
     def __init__(self, flow_el):
         self.flowId = int(flow_el.get('flowId'))
         rxPackets = long(flow_el.get('rxPackets'))
@@ -45,11 +43,9 @@ class Flow(object):
         rx_duration = float(long(flow_el.get('timeLastRxPacket')[:-4]) - long(flow_el.get('timeFirstRxPacket')[:-4]))*1e-9
         self.rx_duration = rx_duration
         self.probe_stats_unsorted = []
+            
         if rxPackets:
             self.hopCount = float(flow_el.get('timesForwarded')) / rxPackets + 1
-        else:
-            self.hopCount = -1000
-        if rxPackets:
             self.delayMean = float(flow_el.get('delaySum')[:-2]) / rxPackets * 1e-9
             self.jitterMean = float(flow_el.get('jitterSum')[:-2]) / rxPackets * 1e-9
             self.packetSizeMean = float(flow_el.get('rxBytes')) / rxPackets
@@ -66,11 +62,13 @@ class Flow(object):
                 jitters.append(0)
     
         else:
+            self.hopCount = -1000
             self.delayMean = None
             bitrates.append(0)
             delays.append(0)
             self.jitterMean = None
             self.packetSizeMean = None
+            
         if rx_duration > 0:
             self.rxBitrate = long(flow_el.get('rxBytes'))*8 / rx_duration
         else:
@@ -79,13 +77,17 @@ class Flow(object):
             self.txBitrate = long(flow_el.get('txBytes'))*8 / tx_duration
         else:
             self.txBitrate = None
+
         lost = float(flow_el.get('lostPackets'))
         losses.append(lost)
-        #print "rxBytes: %s; txPackets: %s; rxPackets: %s; lostPackets: %s" % (flow_el.get('rxBytes'), txPackets, rxPackets, lost)
-        if rxPackets == 0:
+        
+        deliveries.append(rxPackets)
+        if txPackets == 0:
             self.packetLossRatio = None
+            self.packetDeliveryRatio = None
         else:
-            self.packetLossRatio = (lost / (rxPackets + lost))
+            self.packetLossRatio = ((lost * 100) / txPackets)
+            self.packetDeliveryRatio = ((rxPackets * 100) / txPackets)
 
         interrupt_hist_elem = flow_el.find("flowInterruptionsHistogram")
         if interrupt_hist_elem is None:
@@ -137,6 +139,8 @@ def main(argv):
     bitrates = []
     global losses
     losses = []
+    global deliveries
+    deliveries = []
     global delays
     delays = []
     global jitters
@@ -173,30 +177,37 @@ def main(argv):
             print "\tMean Delay: %.2f ms" % (flow.delayMean*1e3,)
             print "\tMean Jitter: %.2f ms" % (flow.jitterMean*1e3,)
             print "\tPacket Loss Ratio: %.2f %%" % (flow.packetLossRatio*100)
+            print "\tPacket Delivery Ratio: %.2f %%" % (flow.packetDeliveryRatio*100)
 
     pylab.figure(figsize=(10, 15))
     
     
-    pylab.subplot(411)
+    pylab.subplot(511)
     n, bins, patches = pylab.hist(bitrates, bins=40)
     pylab.setp(patches, 'facecolor', 'g', 'alpha', 0.75)
     
     pylab.xlabel("Flow bitrate (bit/s")
     pylab.ylabel("Number of flows")
     
-    pylab.subplot(412)
+    pylab.subplot(512)
     n, bins, patches = pylab.hist(losses, bins=40)
     pylab.setp(patches, 'facecolor', 'r', 'alpha', 0.75)
     pylab.xlabel("Number of lost packets")
     pylab.ylabel("Number of flows")
     
-    pylab.subplot(413)
+    pylab.subplot(513)
+    n, bins, patches = pylab.hist(deliveries, bins=40)
+    pylab.setp(patches, 'facecolor', 'w', 'alpha', 0.75)
+    pylab.xlabel("Number of delivered packets")
+    pylab.ylabel("Number of flows")
+    
+    pylab.subplot(514)
     n, bins, patches = pylab.hist(delays, bins=20)
     pylab.setp(patches, 'facecolor', 'y', 'alpha', 0.75)
     pylab.xlabel("Delay  (s)")
     pylab.ylabel("Number of flows")
     
-    pylab.subplot(414)
+    pylab.subplot(515)
     n, bins, patches = pylab.hist(jitters, bins=20)
     pylab.setp(patches, 'facecolor', 'b', 'alpha', 0.75)
     pylab.xlabel("Jitter  (s)")
