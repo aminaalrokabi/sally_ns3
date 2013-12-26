@@ -90,6 +90,18 @@ class Simulation(object):
             if flow.rxPackets:
                 flow_map[flow.flowId] = flow
                 self.flows.append(flow)
+        
+        FlowClassifier_el, = simulation_el.findall("Ipv4FlowClassifier")
+        
+        self.dataPackets = 0
+        for flow_cls in FlowClassifier_el.findall("Flow"):
+            flowId = int(flow_cls.get('flowId'))
+            port = int(flow_cls.get('destinationPort'))
+            if port == 9:
+            	try:
+                	self.dataPackets += flow_map[flowId].rxPackets
+                except KeyError:
+                	pass
 
 
 def main(argv):
@@ -131,7 +143,7 @@ def main(argv):
             print "\tPacket size mean: %d" % (sum(flow.packetSizeMean for flow in sim.flows)/len(sim.flows))
             print "\tLost packets %d" % (sum(flow.lost for flow in sim.flows)/len(sim.flows))
             print "\tPacket loss ratio: %.2f %%" % (sum((flow.packetLossRatio*100) for flow in sim.flows)/len(sim.flows))
-            print "\tNormalised Routing overhead: %.2f" % (sum((flow.rxPackets) for flow in sim.flows)/30)
+            print "\tNormalised Routing overhead (%d packets): %.2f" % (sim.dataPackets, sum((flow.rxPackets) for flow in sim.flows)/sim.dataPackets)
      
     N = len(network_sizes)
     ind = np.arange(N)
