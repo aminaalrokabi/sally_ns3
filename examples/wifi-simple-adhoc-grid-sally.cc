@@ -95,13 +95,13 @@ void ReceivePacket (Ptr<Socket> socket)
   NS_LOG_UNCOND ("Received one packet!");
 }
 
-static void GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize, 
+static void GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize,
                              uint32_t pktCount, Time pktInterval )
 {
   if (pktCount > 0)
     {
       socket->Send (Create<Packet> (pktSize));
-      Simulator::Schedule (pktInterval, &GenerateTraffic, 
+      Simulator::Schedule (pktInterval, &GenerateTraffic,
                            socket, pktSize,pktCount-1, pktInterval);
     }
   else

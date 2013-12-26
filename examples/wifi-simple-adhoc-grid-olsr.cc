@@ -243,7 +243,7 @@ int main (int argc, char *argv[])
   Simulator::Stop (Seconds (60.0));
   Simulator::Run ();
   std::ostringstream filename;
-  filename << "olsr.flomonitor." << numNodes;
+  filename << "olsr.flomonitor.constant." << numNodes;
   flowMon->SerializeToXmlFile(filename.str().c_str(), true, true);
   Simulator::Destroy ();
 

@@ -93,8 +93,8 @@ class Simulation(object):
 
 
 def main(argv):
-    protocols = ["sally", "olsr", "aodv", "chained"]
-    network_sizes = [5,10,15,20,25,50,75,100]
+    protocols = ["SALLY", "OLSR", "AODV", "CHAINED"]
+    network_sizes = [5,10,15,20,25]
     colours = ['r','y','g','b']
     simulations = [] 
      
