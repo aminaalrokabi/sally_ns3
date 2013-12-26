@@ -242,9 +242,11 @@ int main (int argc, char *argv[])
   // Output what we are doing
   NS_LOG_UNCOND ("Testing from node " << sourceNode << " to " << sinkNode << " with grid distance " << distance);
 
-  Simulator::Stop (Seconds (32.0));
+  Simulator::Stop (Seconds (60.0));
   Simulator::Run ();
-  flowMon->SerializeToXmlFile("myglobalroutin.flowmonitor", true, true);
+  std::ostringstream filename;
+  filename << "aodv.flomonitor." << numNodes;
+  flowMon->SerializeToXmlFile(filename.str().c_str(), true, true);
   Simulator::Destroy ();
 
   return 0;

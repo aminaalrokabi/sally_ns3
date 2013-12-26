@@ -79,7 +79,6 @@
 
 #include "ns3/ipv4-static-routing-helper.h"
 #include "ns3/ipv4-list-routing-helper.h"
-
 #include "ns3/flow-monitor-helper.h"
 
 #include <iostream>
@@ -111,7 +110,6 @@ static void GenerateTraffic (Ptr<Socket> socket, uint32_t pktSize,
     }
 }
 
-
 int main (int argc, char *argv[])
 {
   std::string phyMode ("DsssRate1Mbps");
@@ -121,7 +119,7 @@ int main (int argc, char *argv[])
   uint32_t numNodes = 25;  // by default, 5x5
   uint32_t sinkNode = 0;
   uint32_t sourceNode = 24;
-  double interval = 1.0; // seconds
+  double interval = 1; // seconds
   bool verbose = false;
   bool tracing = true;
   int numHybridNodes = 0;
@@ -236,7 +234,6 @@ int main (int argc, char *argv[])
 	Ptr<FlowMonitor> flowMon;
 	FlowMonitorHelper flowMonHelper;
 	flowMon = flowMonHelper.InstallAll();
-
   // Give AODV time to converge-- 30 seconds perhaps
   Simulator::Schedule (Seconds (30.0), &GenerateTraffic, 
                        source, packetSize, numPackets, interPacketInterval);
@@ -244,12 +241,14 @@ int main (int argc, char *argv[])
   // Output what we are doing
   NS_LOG_UNCOND ("Testing from node " << sourceNode << " to " << sinkNode << " with grid distance " << distance);
 
-  Simulator::Stop (Seconds (32.0));
+  Simulator::Stop (Seconds (60.0));
   Simulator::Run ();
-  flowMon->SerializeToXmlFile("myglobalroutin.flowmonitor", true, true);
+  //throughput(flowMonHelper, flowMon)
+  std::ostringstream filename;
+  filename << "sally.flomonitor." << numNodes;
+  flowMon->SerializeToXmlFile(filename.str().c_str(), true, true);
 
   Simulator::Destroy ();
 
   return 0;
 }
-
