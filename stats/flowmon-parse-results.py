@@ -106,7 +106,7 @@ class Simulation(object):
 
 def main(argv):
     protocols = ["SALLY", "OLSR", "AODV", "CHAINED"]
-    network_sizes = [5,10,15,20,25]
+    network_sizes = [5,10,15,20,25,30,35]
     colours = ['r','y','g','b']
     simulations = [] 
      
@@ -210,7 +210,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.rxPackets) for flow in sim_pair[0].flows)/30))
+            results.append((sum((flow.rxPackets) for flow in sim_pair[0].flows)/sim_pair[0].dataPackets))
         rects.append(axarr[2][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[2][0].set_ylabel('Routing overhead')
     axarr[2][0].set_xlabel('Network size (nodes)')
