@@ -5,6 +5,7 @@ def build(bld):
     module.includes = '.'
     module.source = [
     	'model/solsr-routing-protocol.cc',
+    	'model/sally-routing.cc',
         'helper/sally-helper.cc',
         'helper/solsr-helper.cc',
         ]
@@ -18,6 +19,7 @@ def build(bld):
     headers.module = 'sally'
     headers.source = [
     	'model/solsr-routing-protocol.h',
+    	'model/sally-routing.h',
 		'helper/solsr-helper.h',
         'helper/sally-helper.h',
         ]

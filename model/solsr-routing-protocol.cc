@@ -12,7 +12,7 @@
 #include "ns3/ipv4-static-routing.h"
 #include "solsr-routing-protocol.h"
 
-NS_LOG_COMPONENT_DEFINE ("SallyRouting");
+NS_LOG_COMPONENT_DEFINE ("SOlsrRouting");
 #define OLSR_MAX_SEQ_NUM        65535
 
 namespace ns3 {

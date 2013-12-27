@@ -106,7 +106,8 @@ class Simulation(object):
 
 def main(argv):
     protocols = ["SALLY", "OLSR", "AODV", "CHAINED"]
-    network_sizes = [5,10,15,20,25,30,35]
+    network_sizes = [5,10,15,20,25,30,35,40,45,50]
+    network_sizes = [5,10,15,20,25,30,35,40]
     colours = ['r','y','g','b']
     simulations = [] 
      
@@ -117,7 +118,7 @@ def main(argv):
 
     for protocol in protocols:
         for network_size in network_sizes: 
-            for event, elem in ElementTree.iterparse(open("%s.flomonitor.%d" % (protocol, network_size)), events=("start", "end")):
+            for event, elem in ElementTree.iterparse(open("%s.flomonitor.2.%d" % (protocol, network_size)), events=("start", "end")):
                 if event == "start":
                     level += 1
                 if event == "end":
@@ -140,10 +141,10 @@ def main(argv):
             print "\tRX bitrate: %.2f kbit/s" % (sum((flow.rxBitrate*1e3) for flow in sim.flows)/len(sim.flows))
             print "\tDelay mean: %.2f ms" % (sum((flow.delayMean*1e3) for flow in sim.flows)/len(sim.flows))
             print "\tJitter mean: %.2f ms" % (sum((flow.jitterMean*1e3) for flow in sim.flows)/len(sim.flows))
-            print "\tPacket size mean: %d" % (sum(flow.packetSizeMean for flow in sim.flows)/len(sim.flows))
-            print "\tLost packets %d" % (sum(flow.lost for flow in sim.flows)/len(sim.flows))
+            print "\tPacket size mean: %.2f" % (sum(flow.packetSizeMean for flow in sim.flows)/len(sim.flows))
+            print "\tLost packets %.2f" % (sum(flow.lost for flow in sim.flows)/len(sim.flows))
             print "\tPacket loss ratio: %.2f %%" % (sum((flow.packetLossRatio*100) for flow in sim.flows)/len(sim.flows))
-            print "\tNormalised Routing overhead (%d packets): %.2f" % (sim.dataPackets, sum((flow.rxPackets) for flow in sim.flows)/sim.dataPackets)
+            print "\tNormalised Routing overhead (%d packets): %.2f" % ((sim.dataPackets, (sum((flow.rxPackets) for flow in sim.flows)/sim.dataPackets) * 64))
      
     N = len(network_sizes)
     ind = np.arange(N)
@@ -210,7 +211,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.rxPackets) for flow in sim_pair[0].flows)/sim_pair[0].dataPackets))
+            results.append((sum((flow.rxPackets) for flow in sim_pair[0].flows)/sim_pair[0].dataPackets)*64)
         rects.append(axarr[2][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[2][0].set_ylabel('Routing overhead')
     axarr[2][0].set_xlabel('Network size (nodes)')
