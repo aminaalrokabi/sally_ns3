@@ -130,11 +130,9 @@ SallyRouting::RouteInput (Ptr<const Packet> p, const Ipv4Header &header, Ptr<con
     {
 	  if ((*rprotoIter).second->GetInstanceTypeId ().GetName() == "ns3::sally::SOlsrRoutingProtocol") {
 		  Ptr<sally::SOlsrRoutingProtocol> olsr_prot = DynamicCast<sally::SOlsrRoutingProtocol> ((*rprotoIter).second);
-		  fprintf(stderr, "%d", olsr_prot->m_state.GetMprSelectors ().size () > 0);
 		  useAodv = olsr_prot->m_state.GetMprSelectors ().size () > 0;
 	  }
 	  if ((*rprotoIter).second->GetInstanceTypeId ().GetName() == "ns3::aodv::RoutingProtocol" && !useAodv) {
-		  fprintf (stderr, "not using aodv, skipping \n");
 		  continue;
 	  }
 
