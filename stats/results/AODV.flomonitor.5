@@ -1,0 +1,40 @@
+<?xml version="1.0" ?>
+<FlowMonitor>
+  <FlowStats>
+    <Flow flowId="1" timeFirstTxPacket="+9000000.0ns" timeFirstRxPacket="+9254915.0ns" timeLastTxPacket="+99982406870.0ns" timeLastRxPacket="+99982661734.0ns" delaySum="+16171471.0ns" jitterSum="+732755.0ns" lastDelay="+254864.0ns" txBytes="5016" rxBytes="2988" txPackets="104" rxPackets="62" lostPackets="40" timesForwarded="0">
+    </Flow>
+    <Flow flowId="2" timeFirstTxPacket="+23000000.0ns" timeFirstRxPacket="+23254157.0ns" timeLastTxPacket="+99022000000.0ns" timeLastRxPacket="+99022254131.0ns" delaySum="+27502080.0ns" jitterSum="+4175642.0ns" lastDelay="+254131.0ns" txBytes="4800" rxBytes="4800" txPackets="100" rxPackets="100" lostPackets="0" timesForwarded="0">
+    </Flow>
+    <Flow flowId="3" timeFirstTxPacket="+48000000.0ns" timeFirstRxPacket="+2039254915.0ns" timeLastTxPacket="+99379149999.0ns" timeLastRxPacket="+98372404864.0ns" delaySum="+15346680.0ns" jitterSum="+4933050.0ns" lastDelay="+254865.0ns" txBytes="5040" rxBytes="2328" txPackets="104" rxPackets="48" lostPackets="50" timesForwarded="0">
+    </Flow>
+    <Flow flowId="4" timeFirstTxPacket="+56000000.0ns" timeFirstRxPacket="+56254653.0ns" timeLastTxPacket="+99046000000.0ns" timeLastRxPacket="+99046254584.0ns" delaySum="+26027097.0ns" jitterSum="+1639575.0ns" lastDelay="+254584.0ns" txBytes="4800" rxBytes="4752" txPackets="100" rxPackets="99" lostPackets="1" timesForwarded="0">
+    </Flow>
+    <Flow flowId="5" timeFirstTxPacket="+79000000.0ns" timeFirstRxPacket="+79254157.0ns" timeLastTxPacket="+99077000000.0ns" timeLastRxPacket="+99077523509.0ns" delaySum="+27211826.0ns" jitterSum="+2787008.0ns" lastDelay="+523509.0ns" txBytes="4800" rxBytes="4800" txPackets="100" rxPackets="100" lostPackets="0" timesForwarded="0">
+    </Flow>
+    <Flow flowId="6" timeFirstTxPacket="+50571134376.0ns" timeFirstRxPacket="+0.0ns" timeLastTxPacket="+99995150000.0ns" timeLastRxPacket="+0.0ns" delaySum="+0.0ns" jitterSum="+0.0ns" lastDelay="+0.0ns" txBytes="568468" rxBytes="0" txPackets="6179" rxPackets="0" lostPackets="6115" timesForwarded="0">
+      <packetsDropped reasonCode="0" number="0" />
+      <packetsDropped reasonCode="1" number="0" />
+      <packetsDropped reasonCode="2" number="0" />
+      <packetsDropped reasonCode="3" number="0" />
+      <packetsDropped reasonCode="4" number="0" />
+      <packetsDropped reasonCode="5" number="6115" />
+      <bytesDropped reasonCode="0" bytes="0" />
+      <bytesDropped reasonCode="1" bytes="0" />
+      <bytesDropped reasonCode="2" bytes="0" />
+      <bytesDropped reasonCode="3" bytes="0" />
+      <bytesDropped reasonCode="4" bytes="0" />
+      <bytesDropped reasonCode="5" bytes="562580" />
+    </Flow>
+    <Flow flowId="7" timeFirstTxPacket="+50572603039.0ns" timeFirstRxPacket="+50581362893.0ns" timeLastTxPacket="+99996618663.0ns" timeLastRxPacket="+99996905247.0ns" delaySum="+1788597027.0ns" jitterSum="+23249050.0ns" lastDelay="+286584.0ns" txBytes="568468" rxBytes="568468" txPackets="6179" rxPackets="6179" lostPackets="0" timesForwarded="0">
+    </Flow>
+  </FlowStats>
+  <Ipv4FlowClassifier>
+    <Flow flowId="5" sourceAddress="10.1.1.1" destinationAddress="10.1.1.255" protocol="17" sourcePort="654" destinationPort="654" />
+    <Flow flowId="2" sourceAddress="10.1.1.2" destinationAddress="10.1.1.255" protocol="17" sourcePort="654" destinationPort="654" />
+    <Flow flowId="1" sourceAddress="10.1.1.3" destinationAddress="10.1.1.255" protocol="17" sourcePort="654" destinationPort="654" />
+    <Flow flowId="6" sourceAddress="10.1.1.4" destinationAddress="10.1.1.1" protocol="17" sourcePort="49154" destinationPort="9" />
+    <Flow flowId="3" sourceAddress="10.1.1.4" destinationAddress="10.1.1.255" protocol="17" sourcePort="654" destinationPort="654" />
+    <Flow flowId="7" sourceAddress="10.1.1.5" destinationAddress="10.1.1.2" protocol="17" sourcePort="49154" destinationPort="9" />
+    <Flow flowId="4" sourceAddress="10.1.1.5" destinationAddress="10.1.1.255" protocol="17" sourcePort="654" destinationPort="654" />
+  </Ipv4FlowClassifier>
+</FlowMonitor>
