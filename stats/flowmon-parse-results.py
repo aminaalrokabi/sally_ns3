@@ -87,10 +87,10 @@ class Simulation(object):
         
         self.dataPackets = 0
         self.throughput = 0;
+        numDataFlows = 0
         for flow_cls in FlowClassifier_el.findall("Flow"):
             flowId = int(flow_cls.get('flowId'))
             port = int(flow_cls.get('destinationPort'))
-            numDataFlows = 0
             if port == 9:
                 try:
                     numDataFlows +=1  
@@ -98,14 +98,15 @@ class Simulation(object):
                     self.throughput += (flow_map[flowId].rxBytes / flow_map[flowId].txBytes) 
                 except KeyError:
                     pass
-        if self.throughput == 0:
-            self.throughput = self.throughput / numDataFlows; 
+
+        if numDataFlows > 0:
+            self.throughput = self.throughput / numDataFlows 
               
 
 def main(argv):
     protocols = ["SALLY", "OLSR", "AODV", "CHAINED"]
     network_sizes = [5,10,15,20,25,30,35,40,45,50]
-    network_sizes = [5,10,15,20]
+    network_sizes = [5,10,15,20,25]
     colours = ['r','y','g','b']
     simulations = [] 
      
