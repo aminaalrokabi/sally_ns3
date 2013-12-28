@@ -4,6 +4,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+from matplotlib.font_manager import FontProperties
 
 try:
     from xml.etree import cElementTree as ElementTree
@@ -42,8 +43,8 @@ class Flow(object):
             
         if self.rxPackets:
             self.hopCount = float(flow_el.get('timesForwarded')) / self.rxPackets + 1
-            self.delayMean = float(flow_el.get('delaySum')[:-2])
-            self.jitterMean = float(flow_el.get('jitterSum')[:-2])
+            self.delayMean = float(flow_el.get('delaySum')[:-2]) / self.rxPackets * 1e-9
+            self.jitterMean = float(flow_el.get('jitterSum')[:-2]) / self.rxPackets * 1e-9
             self.packetSizeMean = float(flow_el.get('rxBytes')) / self.rxPackets
             self.lost = float(flow_el.get('lostPackets'))
             
@@ -110,9 +111,9 @@ class Simulation(object):
               
 
 def main(argv):
-    protocols = ["SALLY", "OLSR", "AODV", "CHAINED"]
+    protocols = ["SALLY", "AODV", "OLSR", "CHAINED"]
     network_sizes = [5,10,15,20,25,30,35,40,45,50]
-    colours = ['r','y','g','b']
+    colours = ['#009999','#CCFF33','#CC33FF','#0066CC']
     simulations = [] 
      
     level = 0
@@ -144,14 +145,17 @@ def main(argv):
         for sim_pair in sims:
             sim = sim_pair[0]
             network_size = sim_pair[1]
-            print "Network size %d" % network_size
-            print "delay %f" % sim_pair[0].delay
+            #print "Network size %d" % network_size
+            #print "delay %f" % sim_pair[0].delay
             
      
     N = len(network_sizes)
     ind = np.arange(N)
-    width = 0.35
+    width = 0.5
     
+    fontP = FontProperties()
+    fontP.set_size('small')
+   
     f, axarr = plt.subplots(3,2)
     rects = []
     for i, protocol in enumerate(protocols):
@@ -162,38 +166,44 @@ def main(argv):
     axarr[0][0].set_ylabel('Throughput (kbit/s)')
     axarr[0][0].set_xlabel('Network size (nodes)')
     axarr[0][0].set_title('Throughput against network size')
-    axarr[0][0].set_xticks(((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)
+    axarr[0][0].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[0][0].set_xticklabels(tuple(network_sizes))
-    
-    axarr[0][0].legend(tuple([l[0] for l in rects]),tuple(protocols))
+    axarr[0][0].patch.set_facecolor('#B2CCCC')
+    box = axarr[0][0].get_position()
+    axarr[0][0].set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    axarr[0][0].legend(tuple([l[0] for l in rects]),tuple(protocols),prop=fontP,bbox_to_anchor=(1,0.5),loc='center left',fancybox=True, shadow=True)
     
     rects = []
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append(sim_pair[0].delay)
+            results.append(sim_pair[0].delay/1000)
         rects.append(axarr[0][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
-    axarr[0][1].set_ylabel('Delay (ms)')
+    axarr[0][1].set_ylabel('Delay (s)')
     axarr[0][1].set_xlabel('Network size (nodes)')
     axarr[0][1].set_title('End to End delay against network size')
-    axarr[0][1].set_xticks(((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)
+    axarr[0][1].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[0][1].set_xticklabels(tuple(network_sizes))
-    
-    axarr[0][1].legend(tuple([l[0] for l in rects]),tuple(protocols))
+    axarr[0][1].patch.set_facecolor('#B2CCCC')
+    box = axarr[0][1].get_position()
+    axarr[0][1].set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    axarr[0][1].legend(tuple([l[0] for l in rects]),tuple(protocols),prop=fontP,bbox_to_anchor=(1,0.5),loc='center left',fancybox=True, shadow=True)
     
     rects = []
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append(sim_pair[0].jitter)
+            results.append(sim_pair[0].jitter/1000)
         rects.append(axarr[1][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
-    axarr[1][0].set_ylabel('Jitter (ms)')
+    axarr[1][0].set_ylabel('Jitter (s)')
     axarr[1][0].set_xlabel('Network size (nodes)')
     axarr[1][0].set_title('Jitter against network size')
-    axarr[1][0].set_xticks(((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)
+    axarr[1][0].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[1][0].set_xticklabels(tuple(network_sizes))
-    
-    axarr[1][0].legend(tuple([l[0] for l in rects]),tuple(protocols))
+    axarr[1][0].patch.set_facecolor('#B2CCCC')
+    box = axarr[1][0].get_position()
+    axarr[1][0].set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    axarr[1][0].legend(tuple([l[0] for l in rects]),tuple(protocols),prop=fontP,bbox_to_anchor=(1,0.5),loc='center left',fancybox=True, shadow=True)    
     
     rects = []
     for i, protocol in enumerate(protocols):
@@ -201,13 +211,16 @@ def main(argv):
         for sim_pair in sim_list[protocol]:
             results.append((sum((flow.packetLossRatio*100) for flow in sim_pair[0].flows))/len(sim.flows))
         rects.append(axarr[1][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
-    axarr[1][1].set_ylabel('Packet loss (%)')
+    axarr[1][1].set_ylabel('Packet loss ratio (%)')
     axarr[1][1].set_xlabel('Network size (nodes)')
     axarr[1][1].set_title('Packet loss ratio against network size')
-    axarr[1][1].set_xticks(((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)
+    axarr[1][1].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[1][1].set_xticklabels(tuple(network_sizes))
+    axarr[1][1].patch.set_facecolor('#B2CCCC')
+    box = axarr[1][1].get_position()
+    axarr[1][1].set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    axarr[1][1].legend(tuple([l[0] for l in rects]),tuple(protocols),prop=fontP,bbox_to_anchor=(1,0.5),loc='center left',fancybox=True, shadow=True)
     
-    axarr[1][1].legend(tuple([l[0] for l in rects]),tuple(protocols))
     
     rects = []
     for i, protocol in enumerate(protocols):
@@ -215,14 +228,18 @@ def main(argv):
         for sim_pair in sim_list[protocol]:
             results.append(sim_pair[0].numControlPackets)
         rects.append(axarr[2][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
-    axarr[2][0].set_ylabel('Routing overhead')
+    axarr[2][0].set_ylabel('Number of control packets')
     axarr[2][0].set_xlabel('Network size (nodes)')
     axarr[2][0].set_title('Normalised routing overhead against network size')
-    axarr[2][0].set_xticks(((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)
+    axarr[2][0].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[2][0].set_xticklabels(tuple(network_sizes))
+    axarr[2][0].patch.set_facecolor('#B2CCCC')
+    box = axarr[2][0].get_position()
+    axarr[2][0].set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    axarr[2][0].legend(tuple([l[0] for l in rects]),tuple(protocols),prop=fontP,bbox_to_anchor=(1,0.5),loc='center left',fancybox=True, shadow=True)
     
-    axarr[2][0].legend(tuple([l[0] for l in rects]),tuple(protocols))
-    
+    #plt.tight_layout()
+    plt.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.5)
     plt.show()
     
 if __name__ == '__main__':

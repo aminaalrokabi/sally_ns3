@@ -79,6 +79,7 @@
 #include "ns3/dsr-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/flow-monitor-helper.h"
+#include "ns3/rectangle.h"
 
 using namespace ns3;
 using namespace dsr;
@@ -223,7 +224,7 @@ int
 main (int argc, char *argv[])
 {
   RoutingExperiment experiment;
-  double txp = 7.5;
+  double txp = 15;
   experiment.CommandSetup (argc,argv);
   experiment.Run (txp);
 }
@@ -233,12 +234,15 @@ RoutingExperiment::Run (double txp)
 {
   Packet::EnablePrinting ();
 
-  double TotalTime = 100.0;
-  std::string rate ("64kbps");
+  double TotalTime = 50.0;
+  std::string rate ("1500kbps");
   std::string phyMode ("DsssRate11Mbps");
   std::string tr_name ("manet-routing-compare");
   double nodeSpeed = 1.5;
   int nodePause = 10;
+
+  uint32_t seed = (unsigned)time(0);
+  SeedManager::SetSeed (seed);  // Changes seed from default of 1 to 3
 
   Config::SetDefault  ("ns3::OnOffApplication::PacketSize",StringValue ("64"));
   Config::SetDefault ("ns3::OnOffApplication::DataRate",  StringValue (rate));
@@ -283,9 +287,15 @@ RoutingExperiment::Run (double txp)
   ssSpeed << "ns3::UniformRandomVariable[Min=0.0|Max=" << nodeSpeed << "]";
   std::stringstream ssPause;
   ssPause << "ns3::ConstantRandomVariable[Constant=" << nodePause << "]";
-  mobilityAdhoc.SetMobilityModel ("ns3::RandomDirection2dMobilityModel",
-                                  "Speed", StringValue (ssSpeed.str ()),
-                                  "Pause", StringValue (ssPause.str ()));
+  Ptr<PositionAllocator> taPositionAlloc = pos.Create ()->GetObject<PositionAllocator> ();
+  streamIndex += taPositionAlloc->AssignStreams (streamIndex);
+
+   mobilityAdhoc.SetMobilityModel ("ns3::RandomWaypointMobilityModel",
+                                    "Speed", StringValue (ssSpeed.str ()),
+                                    "Pause", StringValue (ssPause.str ()),
+                                    "PositionAllocator", PointerValue (taPositionAlloc));
+   mobilityAdhoc.SetPositionAllocator (taPositionAlloc);
+
   mobilityAdhoc.Install (adhocNodes);
   streamIndex += mobilityAdhoc.AssignStreams (adhocNodes, streamIndex);
 
@@ -342,9 +352,12 @@ RoutingExperiment::Run (double txp)
 
       Ptr<UniformRandomVariable> var = CreateObject<UniformRandomVariable> ();
       ApplicationContainer temp = onoff1.Install (adhocNodes.Get (i + nSinks));
-      temp.Start (Seconds (var->GetValue (50.0,51.0)));
+      temp.Start (Seconds (var->GetValue (20.0,21.0)));
       temp.Stop (Seconds (TotalTime));
     }
+
+  AsciiTraceHelper ascii;
+    MobilityHelper::EnableAsciiAll (ascii.CreateFileStream (tr_name + ".mob"));
 
   Ptr<FlowMonitor> flowmon;
   FlowMonitorHelper flowmonHelper;
@@ -355,11 +368,11 @@ RoutingExperiment::Run (double txp)
   Simulator::Stop (Seconds (TotalTime));
   Simulator::Run ();
   std::ostringstream filename;
-  filename << protocolName << ".flomonitor." << nNodes;
+  filename << protocolName << ".flomonitor.3." << nNodes;
   flowmon->SerializeToXmlFile(filename.str().c_str(), false, false);
 
   std::ostringstream filename2;
-  filename2 << protocolName << ".custom." << nNodes;
+  filename2 << protocolName << ".custom.3." << nNodes;
   std::ofstream os (filename2.str().c_str(), std::ios::out|std::ios::binary);
   os << "<?xml version=\"1.0\" ?>\n";
   os << "<CustomStats>\n<RoutingStats numPackets=\"" << nPackets << "\" numControlPackets=\"" << nControlPackets << "\" />\n</CustomStats>";
