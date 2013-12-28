@@ -39,6 +39,8 @@ class Flow(object):
 
     def __init__(self, flow_el):
         self.flowId = int(flow_el.get('flowId'))
+        self.rxBytes = int(flow_el.get('rxBytes'))
+        self.txBytes = int(flow_el.get('txBytes'))
         self.rxPackets = long(flow_el.get('rxPackets'))
         txPackets = long(flow_el.get('txPackets'))
         tx_duration = float(long(flow_el.get('timeLastTxPacket')[:-4]) - long(flow_el.get('timeFirstTxPacket')[:-4]))*1e-9
@@ -94,20 +96,27 @@ class Simulation(object):
         FlowClassifier_el, = simulation_el.findall("Ipv4FlowClassifier")
         
         self.dataPackets = 0
+        self.throughput = 0;
         for flow_cls in FlowClassifier_el.findall("Flow"):
             flowId = int(flow_cls.get('flowId'))
             port = int(flow_cls.get('destinationPort'))
+            numDataFlows = 0
             if port == 9:
             	try:
+            		numDataFlows +=1  
                 	self.dataPackets += flow_map[flowId].rxPackets
+                	self.throughput += (flow_map[flowId].rxBytes / flow_map[flowId].txBytes) 
                 except KeyError:
                 	pass
+        if self.throughput == 0:
+        	self.throughput = self.throughput / numDataFlows; 
+              
 
 
 def main(argv):
     protocols = ["SALLY", "OLSR", "AODV", "CHAINED"]
     network_sizes = [5,10,15,20,25,30,35,40,45,50]
-    network_sizes = [5,10,15,20,25,30,35,40]
+    network_sizes = [5,10,15,20,25,30,35]
     colours = ['r','y','g','b']
     simulations = [] 
      
@@ -144,7 +153,7 @@ def main(argv):
             print "\tPacket size mean: %.2f" % (sum(flow.packetSizeMean for flow in sim.flows)/len(sim.flows))
             print "\tLost packets %.2f" % (sum(flow.lost for flow in sim.flows)/len(sim.flows))
             print "\tPacket loss ratio: %.2f %%" % (sum((flow.packetLossRatio*100) for flow in sim.flows)/len(sim.flows))
-            print "\tNormalised Routing overhead (%d packets): %.2f" % ((sim.dataPackets, (sum((flow.rxPackets) for flow in sim.flows)/sim.dataPackets) * 64))
+            print "\tNormalised Routing overhead (%d total/%d data packets): %.2f" % ((sum((flow.rxPackets) for flow in sim.flows), sim.dataPackets, (sum((flow.rxPackets) for flow in sim.flows)/sim.dataPackets) * 64))
      
     N = len(network_sizes)
     ind = np.arange(N)
@@ -155,7 +164,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.txBitrate*1e3)+(flow.rxBitrate*1e3) for flow in sim_pair[0].flows))/len(sim.flows))
+            results.append(sim_pair[0].throughput)
         rects.append(axarr[0][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[0][0].set_ylabel('Throughput (kbit/s)')
     axarr[0][0].set_xlabel('Network size (nodes)')

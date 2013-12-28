@@ -2,6 +2,66 @@ Only in src/antenna/bindings: callbacks_list.pyc
 Only in src/antenna/bindings: modulegen__gcc_ILP32.pyc
 Only in src/aodv/bindings: callbacks_list.pyc
 Only in src/aodv/bindings: modulegen__gcc_ILP32.pyc
+diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.cc src/aodv/model/aodv-routing-protocol.cc
+--- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.cc	2013-11-15 21:50:31.000000000 +0000
++++ src/aodv/model/aodv-routing-protocol.cc	2013-12-28 00:33:15.387375478 +0000
+@@ -41,6 +41,7 @@
+ #include "ns3/pointer.h"
+ #include <algorithm>
+ #include <limits>
++#include "ns3/trace-source-accessor.h"
+ 
+ NS_LOG_COMPONENT_DEFINE ("AodvRoutingProtocol");
+ 
+@@ -252,6 +253,10 @@
+                    StringValue ("ns3::UniformRandomVariable"),
+                    MakePointerAccessor (&RoutingProtocol::m_uniformRandomVariable),
+                    MakePointerChecker<UniformRandomVariable> ())
++   .AddTraceSource ("Rx", "Receive OLSR packet.",
++				MakeTraceSourceAccessor (&RoutingProtocol::m_rxPacketTrace))
++   .AddTraceSource ("Tx", "Send OLSR packet.",
++					MakeTraceSourceAccessor (&RoutingProtocol::m_txPacketTrace))
+   ;
+   return tid;
+ }
+@@ -906,6 +912,7 @@
+ void
+ RoutingProtocol::SendTo (Ptr<Socket> socket, Ptr<Packet> packet, Ipv4Address destination)
+ {
++	m_txPacketTrace (0);
+     socket->SendTo (packet, 0, InetSocketAddress (destination, AODV_PORT));
+ 
+ }
+@@ -943,6 +950,8 @@
+   UpdateRouteToNeighbor (sender, receiver);
+   TypeHeader tHeader (AODVTYPE_RREQ);
+   packet->RemoveHeader (tHeader);
++  m_rxPacketTrace (0);
++
+   if (!tHeader.IsValid ())
+     {
+       NS_LOG_DEBUG ("AODV message " << packet->GetUid () << " with unknown type received: " << tHeader.Get () << ". Drop");
+diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.h src/aodv/model/aodv-routing-protocol.h
+--- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.h	2013-11-15 21:50:31.000000000 +0000
++++ src/aodv/model/aodv-routing-protocol.h	2013-12-28 00:25:23.107357949 +0000
+@@ -40,6 +40,7 @@
+ #include "ns3/ipv4-interface.h"
+ #include "ns3/ipv4-l3-protocol.h"
+ #include <map>
++#include "ns3/traced-callback.h"
+ 
+ namespace ns3
+ {
+@@ -268,6 +269,9 @@
+   Ptr<UniformRandomVariable> m_uniformRandomVariable;  
+   /// Keep track of the last bcast time
+   Time m_lastBcastTime;
++
++  TracedCallback <uint32_t> m_rxPacketTrace;
++  TracedCallback <uint32_t> m_txPacketTrace;
+ };
+ 
+ }
 Only in src/applications/bindings: callbacks_list.pyc
 Only in src/applications/bindings: modulegen_customizations.pyc
 Only in src/applications/bindings: modulegen__gcc_ILP32.pyc
@@ -39,10 +99,22 @@ Only in src/internet/bindings: callbacks_list.pyc
 Only in src/internet/bindings: modulegen__gcc_ILP32.pyc
 diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/internet/model/ipv4-list-routing.h src/internet/model/ipv4-list-routing.h
 --- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/internet/model/ipv4-list-routing.h	2013-11-15 21:50:31.000000000 +0000
-+++ src/internet/model/ipv4-list-routing.h	2013-12-21 01:59:18.458394679 +0000
-@@ -96,6 +96,7 @@
-   typedef std::list<Ipv4RoutingProtocolEntry> Ipv4RoutingProtocolList;
-   Ipv4RoutingProtocolList m_routingProtocols;
++++ src/internet/model/ipv4-list-routing.h	2013-12-27 15:30:41.270167237 +0000
+@@ -87,15 +87,15 @@
+   virtual void NotifyRemoveAddress (uint32_t interface, Ipv4InterfaceAddress address);
+   virtual void SetIpv4 (Ptr<Ipv4> ipv4);
+   virtual void PrintRoutingTable (Ptr<OutputStreamWrapper> stream) const;
+-
++  typedef std::pair<int16_t, Ptr<Ipv4RoutingProtocol> > Ipv4RoutingProtocolEntry;
++  typedef std::list<Ipv4RoutingProtocolEntry> Ipv4RoutingProtocolList;
++  Ipv4RoutingProtocolList m_routingProtocols;
+ protected:
+   void DoDispose (void);
+   void DoInitialize (void);
+ private:
+-  typedef std::pair<int16_t, Ptr<Ipv4RoutingProtocol> > Ipv4RoutingProtocolEntry;
+-  typedef std::list<Ipv4RoutingProtocolEntry> Ipv4RoutingProtocolList;
+-  Ipv4RoutingProtocolList m_routingProtocols;
    static bool Compare (const Ipv4RoutingProtocolEntry& a, const Ipv4RoutingProtocolEntry& b);
 +protected:
    Ptr<Ipv4> m_ipv4;
@@ -64,8 +136,8 @@ Only in src/olsr/bindings: callbacks_list.pyc
 Only in src/olsr/bindings: modulegen__gcc_ILP32.pyc
 diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/olsr/model/olsr-routing-protocol.h src/olsr/model/olsr-routing-protocol.h
 --- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/olsr/model/olsr-routing-protocol.h	2013-11-15 21:50:32.000000000 +0000
-+++ src/olsr/model/olsr-routing-protocol.h	2013-12-25 00:08:00.640450126 +0000
-@@ -132,22 +132,56 @@
++++ src/olsr/model/olsr-routing-protocol.h	2013-12-27 15:47:57.318205691 +0000
+@@ -132,22 +132,57 @@
    /// Inject Associations from an Ipv4StaticRouting instance
    void SetRoutingTableAssociation (Ptr<Ipv4StaticRouting> routingTable);
  
@@ -112,6 +184,7 @@ diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/ols
 +
 +	    bool m_linkTupleTimerFirstTime;
 +	    Ptr<Ipv4StaticRouting> m_hnaRoutingTable;
++	    OlsrState m_state;
  protected:
    virtual void DoInitialize (void);
  private:
@@ -131,22 +204,21 @@ diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/ols
    /// HELLO messages' emission interval.
    Time m_helloInterval;
    /// TC messages' emission interval.
-@@ -156,14 +190,11 @@
+@@ -156,13 +191,9 @@
    Time m_midInterval;
    /// HNA messages' emission interval.
    Time m_hnaInterval;
 -  /// Willingness for forwarding packets on behalf of other nodes.
 -  uint8_t m_willingness;
-+
  
-   /// Internal state with all needed data structs.
-   OlsrState m_state;
+-  /// Internal state with all needed data structs.
+-  OlsrState m_state;
  
 -  Ptr<Ipv4> m_ipv4;
--
++  /// Internal state with all needed data structs.
+ 
    void Clear ();
    uint32_t GetSize () const { return m_table.size (); }
-   void RemoveEntry (const Ipv4Address &dest);
 @@ -180,23 +211,10 @@
    bool FindSendEntry (const RoutingTableEntry &entry,
                        RoutingTableEntry &outEntry) const;
