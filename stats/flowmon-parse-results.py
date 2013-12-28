@@ -15,25 +15,17 @@ def parse_time_ns(tm):
         return long(tm[:-4])
     raise ValueError(tm)
 
+def getCustomStats(protocol, network_size):
+    level = 0
+    for event, elem in ElementTree.iterparse(open("%s.custom.%d" % (protocol, network_size)), events=("start", "end")):
+        if event == "start":
+            level += 1
+        if event == "end":
+            level -= 1
+            if level == 0 and elem.tag == 'CustomStats':
+                custom_stat_el = elem.find('RoutingStats')
+                return (int(custom_stat_el.get('numPackets')), int(custom_stat_el.get('numControlPackets')))
 
-
-class FiveTuple(object):
-    __slots__ = ['sourceAddress', 'destinationAddress', 'protocol', 'sourcePort', 'destinationPort']
-    def __init__(self, el):
-        self.sourceAddress = el.get('sourceAddress')
-        self.destinationAddress = el.get('destinationAddress')
-        self.sourcePort = int(el.get('sourcePort'))
-        self.destinationPort = int(el.get('destinationPort'))
-        self.protocol = int(el.get('protocol'))
-        
-class Histogram(object):
-    __slots__ = 'bins', 'nbins', 'number_of_flows'
-    def __init__(self, el=None):
-        self.bins = []
-        if el is not None:
-            #self.nbins = int(el.get('nBins'))
-            for bin in el.findall('bin'):
-                self.bins.append( (float(bin.get("start")), float(bin.get("width")), int(bin.get("count"))) )
 
 class Flow(object):
 
@@ -78,8 +70,6 @@ class Flow(object):
         else:
             self.packetLossRatio = (self.lost / txPackets)
 
-class ProbeFlowStats(object):
-    pass
 
 class Simulation(object):
     def __init__(self, simulation_el):
@@ -102,21 +92,20 @@ class Simulation(object):
             port = int(flow_cls.get('destinationPort'))
             numDataFlows = 0
             if port == 9:
-            	try:
-            		numDataFlows +=1  
-                	self.dataPackets += flow_map[flowId].rxPackets
-                	self.throughput += (flow_map[flowId].rxBytes / flow_map[flowId].txBytes) 
+                try:
+                    numDataFlows +=1  
+                    self.dataPackets += flow_map[flowId].rxPackets
+                    self.throughput += (flow_map[flowId].rxBytes / flow_map[flowId].txBytes) 
                 except KeyError:
-                	pass
+                    pass
         if self.throughput == 0:
-        	self.throughput = self.throughput / numDataFlows; 
+            self.throughput = self.throughput / numDataFlows; 
               
-
 
 def main(argv):
     protocols = ["SALLY", "OLSR", "AODV", "CHAINED"]
     network_sizes = [5,10,15,20,25,30,35,40,45,50]
-    network_sizes = [5,10,15,20,25,30,35]
+    network_sizes = [5,10,15,20]
     colours = ['r','y','g','b']
     simulations = [] 
      
@@ -127,15 +116,19 @@ def main(argv):
 
     for protocol in protocols:
         for network_size in network_sizes: 
-            for event, elem in ElementTree.iterparse(open("%s.flomonitor.2.%d" % (protocol, network_size)), events=("start", "end")):
+            for event, elem in ElementTree.iterparse(open("%s.flomonitor.%d" % (protocol, network_size)), events=("start", "end")):
                 if event == "start":
                     level += 1
                 if event == "end":
                     level -= 1
                     if level == 0 and elem.tag == 'FlowMonitor':
                         sim = Simulation(elem)
+                        custom_stats = getCustomStats(protocol, network_size)
+                        sim.numPackets = custom_stats[0]
+                        sim.numControlPackets = custom_stats[1]
                         sim_list[protocol].append((sim, network_size))
                         elem.clear() # won't need this any more
+            
 
     for sim_pair in sim_list.iteritems():
         protocol = sim_pair[0]
@@ -220,7 +213,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.rxPackets) for flow in sim_pair[0].flows)/sim_pair[0].dataPackets)*64)
+            results.append(sim_pair[0].numControlPackets)
         rects.append(axarr[2][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[2][0].set_ylabel('Routing overhead')
     axarr[2][0].set_xlabel('Network size (nodes)')
