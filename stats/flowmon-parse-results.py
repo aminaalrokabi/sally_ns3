@@ -42,8 +42,8 @@ class Flow(object):
             
         if self.rxPackets:
             self.hopCount = float(flow_el.get('timesForwarded')) / self.rxPackets + 1
-            self.delayMean = float(flow_el.get('delaySum')[:-2]) / self.rxPackets * 1e-9
-            self.jitterMean = float(flow_el.get('jitterSum')[:-2]) / self.rxPackets * 1e-9
+            self.delayMean = float(flow_el.get('delaySum')[:-2])
+            self.jitterMean = float(flow_el.get('jitterSum')[:-2])
             self.packetSizeMean = float(flow_el.get('rxBytes')) / self.rxPackets
             self.lost = float(flow_el.get('lostPackets'))
             
@@ -87,6 +87,8 @@ class Simulation(object):
         
         self.dataPackets = 0
         self.throughput = 0;
+        self.delay = 0;
+        self.jitter = 0;
         numDataFlows = 0
         for flow_cls in FlowClassifier_el.findall("Flow"):
             flowId = int(flow_cls.get('flowId'))
@@ -95,18 +97,21 @@ class Simulation(object):
                 try:
                     numDataFlows +=1  
                     self.dataPackets += flow_map[flowId].rxPackets
-                    self.throughput += (flow_map[flowId].rxBytes / flow_map[flowId].txBytes) 
+                    self.throughput += (flow_map[flowId].rxBytes / flow_map[flowId].txBytes)
+                    self.delay += flow_map[flowId].delayMean
+                    self.jitter += flow_map[flowId].jitterMean
                 except KeyError:
                     pass
 
         if numDataFlows > 0:
-            self.throughput = self.throughput / numDataFlows 
+            self.throughput = self.throughput / numDataFlows
+            self.delay  = self.delay / numDataFlows
+            self.jitter = self.jitter / numDataFlows 
               
 
 def main(argv):
     protocols = ["SALLY", "OLSR", "AODV", "CHAINED"]
     network_sizes = [5,10,15,20,25,30,35,40,45,50]
-    network_sizes = [5,10,15,20,25]
     colours = ['r','y','g','b']
     simulations = [] 
      
@@ -140,14 +145,8 @@ def main(argv):
             sim = sim_pair[0]
             network_size = sim_pair[1]
             print "Network size %d" % network_size
-            print "\tTX bitrate: %.2f kbit/s" % (sum((flow.txBitrate*1e3) for flow in sim.flows)/len(sim.flows))
-            print "\tRX bitrate: %.2f kbit/s" % (sum((flow.rxBitrate*1e3) for flow in sim.flows)/len(sim.flows))
-            print "\tDelay mean: %.2f ms" % (sum((flow.delayMean*1e3) for flow in sim.flows)/len(sim.flows))
-            print "\tJitter mean: %.2f ms" % (sum((flow.jitterMean*1e3) for flow in sim.flows)/len(sim.flows))
-            print "\tPacket size mean: %.2f" % (sum(flow.packetSizeMean for flow in sim.flows)/len(sim.flows))
-            print "\tLost packets %.2f" % (sum(flow.lost for flow in sim.flows)/len(sim.flows))
-            print "\tPacket loss ratio: %.2f %%" % (sum((flow.packetLossRatio*100) for flow in sim.flows)/len(sim.flows))
-            print "\tNormalised Routing overhead (%d total/%d data packets): %.2f" % ((sum((flow.rxPackets) for flow in sim.flows), sim.dataPackets, (sum((flow.rxPackets) for flow in sim.flows)/sim.dataPackets) * 64))
+            print "delay %f" % sim_pair[0].delay
+            
      
     N = len(network_sizes)
     ind = np.arange(N)
@@ -172,7 +171,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.delayMean*1e3) for flow in sim_pair[0].flows))/len(sim.flows))
+            results.append(sim_pair[0].delay)
         rects.append(axarr[0][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[0][1].set_ylabel('Delay (ms)')
     axarr[0][1].set_xlabel('Network size (nodes)')
@@ -186,7 +185,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.jitterMean*1e3) for flow in sim_pair[0].flows))/len(sim.flows))
+            results.append(sim_pair[0].jitter)
         rects.append(axarr[1][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[1][0].set_ylabel('Jitter (ms)')
     axarr[1][0].set_xlabel('Network size (nodes)')
