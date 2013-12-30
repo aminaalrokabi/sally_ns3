@@ -18,7 +18,7 @@ def parse_time_ns(tm):
 
 def getCustomStats(protocol, network_size):
     level = 0
-    for event, elem in ElementTree.iterparse(open("%s.custom.%d" % (protocol, network_size)), events=("start", "end")):
+    for event, elem in ElementTree.iterparse(open("results/%s.custom.3.%d" % (protocol, network_size)), events=("start", "end")):
         if event == "start":
             level += 1
         if event == "end":
@@ -123,7 +123,7 @@ def main(argv):
 
     for protocol in protocols:
         for network_size in network_sizes: 
-            for event, elem in ElementTree.iterparse(open("%s.flomonitor.%d" % (protocol, network_size)), events=("start", "end")):
+            for event, elem in ElementTree.iterparse(open("results/%s.flomonitor.3.%d" % (protocol, network_size)), events=("start", "end")):
                 if event == "start":
                     level += 1
                 if event == "end":
@@ -177,7 +177,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append(sim_pair[0].delay/1000)
+            results.append((sum((flow.delayMean*1e3) for flow in sim_pair[0].flows))/len(sim.flows))
         rects.append(axarr[0][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[0][1].set_ylabel('Delay (s)')
     axarr[0][1].set_xlabel('Network size (nodes)')
@@ -193,7 +193,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append(sim_pair[0].jitter/1000)
+            results.append((sum((flow.jitterMean*1e3) for flow in sim_pair[0].flows))/len(sim.flows))
         rects.append(axarr[1][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[1][0].set_ylabel('Jitter (s)')
     axarr[1][0].set_xlabel('Network size (nodes)')
