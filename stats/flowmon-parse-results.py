@@ -18,14 +18,17 @@ def parse_time_ns(tm):
 
 def getCustomStats(protocol, network_size):
     level = 0
-    for event, elem in ElementTree.iterparse(open("results/%s.custom.3.%d" % (protocol, network_size)), events=("start", "end")):
+    for event, elem in ElementTree.iterparse(open("%s.custom.3.%d" % (protocol, network_size)), events=("start", "end")):
         if event == "start":
             level += 1
         if event == "end":
             level -= 1
             if level == 0 and elem.tag == 'CustomStats':
                 custom_stat_el = elem.find('RoutingStats')
-                return (int(custom_stat_el.get('numPackets')), int(custom_stat_el.get('numControlPackets')))
+                aodv = custom_stat_el.get('aodvPacketSizeSent') or 0
+                olsr = custom_stat_el.get('olsrPacketSizeSent') or 0
+            	return (int(aodv)+int(olsr),)    
+                
 
 
 class Flow(object):
@@ -97,7 +100,7 @@ class Simulation(object):
             if port == 9:
                 try:
                     numDataFlows +=1  
-                    self.dataPackets += flow_map[flowId].rxPackets
+                    self.dataPackets += flow_map[flowId].txBytes
                     self.throughput += (flow_map[flowId].rxBytes / flow_map[flowId].txBytes)
                     self.delay += flow_map[flowId].delayMean
                     self.jitter += flow_map[flowId].jitterMean
@@ -111,7 +114,7 @@ class Simulation(object):
               
 
 def main(argv):
-    protocols = ["SALLY", "AODV", "OLSR", "CHAINED"]
+    protocols = ["SALLY", "AODV", "OLSR","CHAINED"]
     network_sizes = [5,10,15,20,25,30,35,40,45,50]
     colours = ['#009999','#CCFF33','#CC33FF','#0066CC']
     simulations = [] 
@@ -123,7 +126,7 @@ def main(argv):
 
     for protocol in protocols:
         for network_size in network_sizes: 
-            for event, elem in ElementTree.iterparse(open("results/%s.flomonitor.3.%d" % (protocol, network_size)), events=("start", "end")):
+            for event, elem in ElementTree.iterparse(open("%s.flomonitor.3.%d" % (protocol, network_size)), events=("start", "end")):
                 if event == "start":
                     level += 1
                 if event == "end":
@@ -131,8 +134,7 @@ def main(argv):
                     if level == 0 and elem.tag == 'FlowMonitor':
                         sim = Simulation(elem)
                         custom_stats = getCustomStats(protocol, network_size)
-                        sim.numPackets = custom_stats[0]
-                        sim.numControlPackets = custom_stats[1]
+                        sim.packetSizeSent = custom_stats[0]
                         sim_list[protocol].append((sim, network_size))
                         elem.clear() # won't need this any more
             
@@ -226,7 +228,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append(sim_pair[0].numControlPackets)
+            results.append(sim_pair[0].packetSizeSent)
         rects.append(axarr[2][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[2][0].set_ylabel('Number of control packets')
     axarr[2][0].set_xlabel('Network size (nodes)')
