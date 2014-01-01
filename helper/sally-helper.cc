@@ -72,7 +72,7 @@ SallyHelper::Create (Ptr<Node> node) const
 {
   static int num_created = 0;
   Ptr<SallyRouting> list = CreateObject<SallyRouting> ();
-  Config::SetDefault ("ns3::olsr::RoutingProtocol::HelloInterval", TimeValue (Seconds (1)));
+  Config::SetDefault ("ns3::olsr::RoutingProtocol::HelloInterval", TimeValue (Seconds (4)));
 
   for (std::list<std::pair<const Ipv4RoutingHelper *, int16_t> >::const_iterator i = m_list.begin ();
 		  i != m_list.end (); ++i)
