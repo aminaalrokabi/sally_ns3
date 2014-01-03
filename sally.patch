@@ -4,7 +4,7 @@ Only in src/aodv/bindings: callbacks_list.pyc
 Only in src/aodv/bindings: modulegen__gcc_ILP32.pyc
 diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.cc src/aodv/model/aodv-routing-protocol.cc
 --- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.cc	2013-11-15 21:50:31.000000000 +0000
-+++ src/aodv/model/aodv-routing-protocol.cc	2013-12-28 00:33:15.387375478 +0000
++++ src/aodv/model/aodv-routing-protocol.cc	2013-12-30 23:53:25.478184314 +0000
 @@ -41,6 +41,7 @@
  #include "ns3/pointer.h"
  #include <algorithm>
@@ -24,26 +24,90 @@ diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aod
    ;
    return tid;
  }
-@@ -906,6 +912,7 @@
- void
- RoutingProtocol::SendTo (Ptr<Socket> socket, Ptr<Packet> packet, Ipv4Address destination)
- {
-+	m_txPacketTrace (0);
-     socket->SendTo (packet, 0, InetSocketAddress (destination, AODV_PORT));
- 
- }
+@@ -898,6 +904,7 @@
+         }
+       NS_LOG_DEBUG ("Send RREQ with id " << rreqHeader.GetId () << " to socket");
+       m_lastBcastTime = Simulator::Now ();
++      m_txPacketTrace (packet->GetSize());
+       Simulator::Schedule (Time (MilliSeconds (m_uniformRandomVariable->GetInteger (0, 10))), &RoutingProtocol::SendTo, this, socket, packet, destination); 
+     }
+   ScheduleRreqRetry (dst);
 @@ -943,6 +950,8 @@
    UpdateRouteToNeighbor (sender, receiver);
    TypeHeader tHeader (AODVTYPE_RREQ);
    packet->RemoveHeader (tHeader);
-+  m_rxPacketTrace (0);
++  m_rxPacketTrace (packet->GetSize());
 +
    if (!tHeader.IsValid ())
      {
        NS_LOG_DEBUG ("AODV message " << packet->GetUid () << " with unknown type received: " << tHeader.Get () << ". Drop");
+@@ -1212,6 +1221,7 @@
+   packet->AddHeader (tHeader);
+   Ptr<Socket> socket = FindSocketWithInterfaceAddress (toOrigin.GetInterface ());
+   NS_ASSERT (socket);
++  m_txPacketTrace (packet->GetSize());
+   socket->SendTo (packet, 0, InetSocketAddress (toOrigin.GetNextHop (), AODV_PORT));
+ }
+ 
+@@ -1239,6 +1249,7 @@
+   m_routingTable.Update (toOrigin);
+ 
+   Ptr<Packet> packet = Create<Packet> ();
++  m_txPacketTrace (packet->GetSize());
+   packet->AddHeader (rrepHeader);
+   TypeHeader tHeader (AODVTYPE_RREP);
+   packet->AddHeader (tHeader);
+@@ -1276,6 +1287,7 @@
+   m_routingTable.LookupRoute (neighbor, toNeighbor);
+   Ptr<Socket> socket = FindSocketWithInterfaceAddress (toNeighbor.GetInterface ());
+   NS_ASSERT (socket);
++  m_txPacketTrace (packet->GetSize());
+   socket->SendTo (packet, 0, InetSocketAddress (neighbor, AODV_PORT));
+ }
+ 
+@@ -1619,6 +1631,7 @@
+         { 
+           destination = iface.GetBroadcast ();
+         }
++      m_txPacketTrace (packet->GetSize());
+       Time jitter = Time (MilliSeconds (m_uniformRandomVariable->GetInteger (0, 10)));
+       Simulator::Schedule (jitter, &RoutingProtocol::SendTo, this , socket, packet, destination);
+     }
+@@ -1723,6 +1736,7 @@
+           toOrigin.GetInterface ());
+       NS_ASSERT (socket);
+       NS_LOG_LOGIC ("Unicast RERR to the source of the data transmission");
++      m_txPacketTrace (packet->GetSize());
+       socket->SendTo (packet, 0, InetSocketAddress (toOrigin.GetNextHop (), AODV_PORT));
+     }
+   else
+@@ -1744,6 +1758,7 @@
+             { 
+               destination = iface.GetBroadcast ();
+             }
++          m_txPacketTrace (packet->GetSize());
+           socket->SendTo (packet, 0, InetSocketAddress (destination, AODV_PORT));
+         }
+     }
+@@ -1779,6 +1794,7 @@
+           Ptr<Socket> socket = FindSocketWithInterfaceAddress (toPrecursor.GetInterface ());
+           NS_ASSERT (socket);
+           NS_LOG_LOGIC ("one precursor => unicast RERR to " << toPrecursor.GetDestination () << " from " << toPrecursor.GetInterface ().GetLocal ());
++          m_txPacketTrace (packet->GetSize());
+           Simulator::Schedule (Time (MilliSeconds (m_uniformRandomVariable->GetInteger (0, 10))), &RoutingProtocol::SendTo, this, socket, packet, precursors.front ());
+           m_rerrCount++;
+         }
+@@ -1812,6 +1828,7 @@
+         { 
+           destination = i->GetBroadcast ();
+         }
++      m_txPacketTrace (packet->GetSize());
+       Simulator::Schedule (Time (MilliSeconds (m_uniformRandomVariable->GetInteger (0, 10))), &RoutingProtocol::SendTo, this, socket, packet, destination);
+     }
+ }
 diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.h src/aodv/model/aodv-routing-protocol.h
 --- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/aodv/model/aodv-routing-protocol.h	2013-11-15 21:50:31.000000000 +0000
-+++ src/aodv/model/aodv-routing-protocol.h	2013-12-28 00:25:23.107357949 +0000
++++ src/aodv/model/aodv-routing-protocol.h	2013-12-30 23:25:51.506122926 +0000
 @@ -40,6 +40,7 @@
  #include "ns3/ipv4-interface.h"
  #include "ns3/ipv4-l3-protocol.h"
@@ -134,9 +198,30 @@ Only in src/nix-vector-routing/bindings: callbacks_list.pyc
 Only in src/nix-vector-routing/bindings: modulegen__gcc_ILP32.pyc
 Only in src/olsr/bindings: callbacks_list.pyc
 Only in src/olsr/bindings: modulegen__gcc_ILP32.pyc
+diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/olsr/model/olsr-routing-protocol.cc src/olsr/model/olsr-routing-protocol.cc
+--- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/olsr/model/olsr-routing-protocol.cc	2013-11-15 21:50:32.000000000 +0000
++++ src/olsr/model/olsr-routing-protocol.cc	2013-12-30 23:25:20.218121765 +0000
+@@ -399,7 +399,7 @@
+       messages.push_back (messageHeader);
+     }
+ 
+-  m_rxPacketTrace (olsrPacketHeader, messages);
++  m_rxPacketTrace (receivedPacket->GetSize(), olsrPacketHeader, messages);
+ 
+   for (MessageList::const_iterator messageIter = messages.begin ();
+        messageIter != messages.end (); messageIter++)
+@@ -1601,7 +1601,7 @@
+   packet->AddHeader (header);
+ 
+   // Trace it
+-  m_txPacketTrace (header, containedMessages);
++  m_txPacketTrace (packet->GetSize(), header, containedMessages);
+ 
+   // Send it
+   for (std::map<Ptr<Socket>, Ipv4InterfaceAddress>::const_iterator i =
 diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/olsr/model/olsr-routing-protocol.h src/olsr/model/olsr-routing-protocol.h
 --- /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/olsr/model/olsr-routing-protocol.h	2013-11-15 21:50:32.000000000 +0000
-+++ src/olsr/model/olsr-routing-protocol.h	2013-12-27 15:47:57.318205691 +0000
++++ src/olsr/model/olsr-routing-protocol.h	2013-12-30 23:25:45.490122703 +0000
 @@ -132,22 +132,57 @@
    /// Inject Associations from an Ipv4StaticRouting instance
    void SetRoutingTableAssociation (Ptr<Ipv4StaticRouting> routingTable);
@@ -282,6 +367,20 @@ diff -rauB /home/mohammad/repos/ns-original/ns-allinone-3.18.2/ns-3.18.1/src/ols
 -  void SendTc ();
    void SendMid ();
    void SendHna ();
+ 
+@@ -305,9 +307,11 @@
+   // HELLO messages arrive)
+   std::map< Ptr<Socket>, Ipv4InterfaceAddress > m_socketAddresses;
+ 
+-  TracedCallback <const PacketHeader &,
++  TracedCallback <uint32_t,
++  	  	  	  	  const PacketHeader &,
+                   const MessageList &> m_rxPacketTrace;
+-  TracedCallback <const PacketHeader &,
++  TracedCallback <uint32_t,
++  	  	  	  	  const PacketHeader &,
+                   const MessageList &> m_txPacketTrace;
+   TracedCallback <uint32_t> m_routingTableChanged;
  
 Only in src/point-to-point/bindings: callbacks_list.pyc
 Only in src/point-to-point/bindings: modulegen_customizations.pyc
