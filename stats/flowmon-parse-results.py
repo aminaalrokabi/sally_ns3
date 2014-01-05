@@ -18,7 +18,7 @@ def parse_time_ns(tm):
 
 def getCustomStats(protocol, network_size):
     level = 0
-    for event, elem in ElementTree.iterparse(open("%s.custom.3.%d" % (protocol, network_size)), events=("start", "end")):
+    for event, elem in ElementTree.iterparse(open("%s.custom.5.%d" % (protocol, network_size)), events=("start", "end")):
         if event == "start":
             level += 1
         if event == "end":
@@ -27,7 +27,7 @@ def getCustomStats(protocol, network_size):
                 custom_stat_el = elem.find('RoutingStats')
                 aodv = custom_stat_el.get('aodvPacketSizeSent') or 0
                 olsr = custom_stat_el.get('olsrPacketSizeSent') or 0
-            	return (int(aodv)+int(olsr),)    
+            	return (int(aodv)+int(olsr),float(custom_stat_el.get('totalEnergy') or 0))    
                 
 
 
@@ -45,34 +45,27 @@ class Flow(object):
         self.probe_stats_unsorted = []
             
         if self.rxPackets:
-            self.hopCount = float(flow_el.get('timesForwarded')) / self.rxPackets + 1
-            self.delayMean = float(flow_el.get('delaySum')[:-2]) / self.rxPackets * 1e-9
-            self.jitterMean = float(flow_el.get('jitterSum')[:-2]) / self.rxPackets * 1e-9
-            self.packetSizeMean = float(flow_el.get('rxBytes')) / self.rxPackets
-            self.lost = float(flow_el.get('lostPackets'))
+            self.delayMean = float(flow_el.get('delaySum')[:-2])
+            self.jitterMean = float(flow_el.get('jitterSum')[:-2])
             
         else:
-            self.hopCount = -1000
             self.delayMean = None
             self.jitterMean = None
-            self.packetSizeMean = None
-            self.packetsDelivered = None
-            self.lost = None
             
         if rx_duration > 0:
             self.rxBitrate = long(flow_el.get('rxBytes'))*8 / rx_duration
         else:
-            self.rxBitrate = 0
+            self.rxBitrate = None
+
         if tx_duration > 0:
             self.txBitrate = long(flow_el.get('txBytes'))*8 / tx_duration
         else:
-            self.txBitrate = 0
+            self.txBitrate = None
 
-        
         if self.rxPackets == 0:
             self.packetLossRatio = None
         else:
-            self.packetLossRatio = (self.lost / txPackets)
+            self.packetLossRatio = (float(flow_el.get('lostPackets')) / txPackets)
 
 
 class Simulation(object):
@@ -87,31 +80,31 @@ class Simulation(object):
                 flow_map[flow.flowId] = flow
                 self.flows.append(flow)
         
-        FlowClassifier_el, = simulation_el.findall("Ipv4FlowClassifier")
         
-        self.dataPackets = 0
-        self.throughput = 0;
+        FlowClassifier_el, = simulation_el.findall("Ipv4FlowClassifier")
+        self.packetLoss = 0;
         self.delay = 0;
         self.jitter = 0;
+        
         numDataFlows = 0
         for flow_cls in FlowClassifier_el.findall("Flow"):
             flowId = int(flow_cls.get('flowId'))
             port = int(flow_cls.get('destinationPort'))
             if port == 9:
                 try:
-                    numDataFlows +=1  
-                    self.dataPackets += flow_map[flowId].txBytes
-                    self.throughput += (flow_map[flowId].rxBytes / flow_map[flowId].txBytes)
+                    self.packetLoss += flow_map[flowId].packetLossRatio
                     self.delay += flow_map[flowId].delayMean
                     self.jitter += flow_map[flowId].jitterMean
                 except KeyError:
                     pass
 
         if numDataFlows > 0:
-            self.throughput = self.throughput / numDataFlows
-            self.delay  = self.delay / numDataFlows
-            self.jitter = self.jitter / numDataFlows 
-              
+            self.packetLoss = self.packetLoss / numDataFlows
+            self.delay = self.delay / numDataFlows
+            self.jitter = self.jitter / numDataFlows
+       
+        self.throughput = (sum([f.rxBitrate for f in filter(lambda x: x.rxBitrate, self.flows)])/len(filter(lambda x: x.rxBitrate, self.flows)))
+        
 
 def main(argv):
     protocols = ["SALLY", "AODV", "OLSR","CHAINED"]
@@ -126,7 +119,7 @@ def main(argv):
 
     for protocol in protocols:
         for network_size in network_sizes: 
-            for event, elem in ElementTree.iterparse(open("%s.flomonitor.3.%d" % (protocol, network_size)), events=("start", "end")):
+            for event, elem in ElementTree.iterparse(open("%s.flomonitor.5.%d" % (protocol, network_size)), events=("start", "end")):
                 if event == "start":
                     level += 1
                 if event == "end":
@@ -135,6 +128,7 @@ def main(argv):
                         sim = Simulation(elem)
                         custom_stats = getCustomStats(protocol, network_size)
                         sim.packetSizeSent = custom_stats[0]
+                        sim.totalEnergy = custom_stats[1]
                         sim_list[protocol].append((sim, network_size))
                         elem.clear() # won't need this any more
             
@@ -179,7 +173,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.delayMean*1e3) for flow in sim_pair[0].flows))/len(sim.flows))
+            results.append(sim_pair[0].delay)
         rects.append(axarr[0][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[0][1].set_ylabel('Delay (s)')
     axarr[0][1].set_xlabel('Network size (nodes)')
@@ -195,7 +189,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.jitterMean*1e3) for flow in sim_pair[0].flows))/len(sim.flows))
+            results.append(sim_pair[0].jitter)
         rects.append(axarr[1][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[1][0].set_ylabel('Jitter (s)')
     axarr[1][0].set_xlabel('Network size (nodes)')
@@ -211,7 +205,7 @@ def main(argv):
     for i, protocol in enumerate(protocols):
         results = []
         for sim_pair in sim_list[protocol]:
-            results.append((sum((flow.packetLossRatio*100) for flow in sim_pair[0].flows))/len(sim.flows))
+            results.append(sim_pair[0].packetLoss)
         rects.append(axarr[1][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[1][1].set_ylabel('Packet loss ratio (%)')
     axarr[1][1].set_xlabel('Network size (nodes)')
@@ -239,6 +233,23 @@ def main(argv):
     box = axarr[2][0].get_position()
     axarr[2][0].set_position([box.x0, box.y0, box.width * 0.9, box.height])
     axarr[2][0].legend(tuple([l[0] for l in rects]),tuple(protocols),prop=fontP,bbox_to_anchor=(1,0.5),loc='center left',fancybox=True, shadow=True)
+    
+    rects = []
+    for i, protocol in enumerate(protocols):
+        results = []
+        for sim_pair in sim_list[protocol]:
+            results.append(sim_pair[0].totalEnergy)
+        rects.append(axarr[2][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
+    axarr[2][1].set_ylabel('Total energy consumed (joules)')
+    axarr[2][1].set_xlabel('Network size (nodes)')
+    axarr[2][1].set_title('Energy consumption')
+    axarr[2][1].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
+    axarr[2][1].set_xticklabels(tuple(network_sizes))
+    axarr[2][1].patch.set_facecolor('#B2CCCC')
+    box = axarr[2][1].get_position()
+    axarr[2][1].set_position([box.x0, box.y0, box.width * 0.9, box.height])
+    axarr[2][1].legend(tuple([l[0] for l in rects]),tuple(protocols),prop=fontP,bbox_to_anchor=(1,0.5),loc='center left',fancybox=True, shadow=True)
+    
     
     #plt.tight_layout()
     plt.subplots_adjust(left=0.125, bottom=0.1, right=0.9, top=0.9, wspace=0.4, hspace=0.5)
