@@ -64,7 +64,7 @@ SOlsrHelper::ExcludeInterface (Ptr<Node> node, uint32_t interface)
 Ptr<Ipv4RoutingProtocol>
 SOlsrHelper::Create (Ptr<Node> node) const
 {
-  Ptr<olsr::RoutingProtocol> agent = m_agentFactory.Create<sally::SOlsrRoutingProtocol> ();
+  Ptr<sally::SOlsrRoutingProtocol> agent = m_agentFactory.Create<sally::SOlsrRoutingProtocol> ();
 
   std::map<Ptr<Node>, std::set<uint32_t> >::const_iterator it = m_interfaceExclusions.find (node);
 

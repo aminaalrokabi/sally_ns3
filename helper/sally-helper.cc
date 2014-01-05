@@ -78,11 +78,6 @@ SallyHelper::Create (Ptr<Node> node) const
 		  i != m_list.end (); ++i)
   {
 	  Ptr<Ipv4RoutingProtocol> prot = i->first->Create (node);
-	  if (prot->GetInstanceTypeId().GetName() == "ns3::aodv::RoutingProtocol") {
-		  if (num_created >= number_of_hybrid_nodes) {
-			  continue;
-		  }
-	  }
 	  list->AddRoutingProtocol (prot,i->second);
   }
   num_created++;
