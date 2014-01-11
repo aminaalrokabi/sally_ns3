@@ -27,7 +27,7 @@ def getCustomStats(protocol, network_size):
                 custom_stat_el = elem.find('RoutingStats')
                 aodv = custom_stat_el.get('aodvPacketSizeSent') or 0
                 olsr = custom_stat_el.get('olsrPacketSizeSent') or 0
-            	return (int(aodv)+int(olsr),float(custom_stat_el.get('totalEnergy') or 0))    
+                return (int(aodv)+int(olsr),float(custom_stat_el.get('totalEnergy') or 0))    
                 
 
 
@@ -45,8 +45,8 @@ class Flow(object):
         self.probe_stats_unsorted = []
             
         if self.rxPackets:
-            self.delayMean = float(flow_el.get('delaySum')[:-2])
-            self.jitterMean = float(flow_el.get('jitterSum')[:-2])
+            self.delayMean = float(flow_el.get('delaySum')[:-2])/1000000000
+            self.jitterMean = float(flow_el.get('jitterSum')[:-2])/1000000000
             
         else:
             self.delayMean = None
@@ -90,8 +90,10 @@ class Simulation(object):
         for flow_cls in FlowClassifier_el.findall("Flow"):
             flowId = int(flow_cls.get('flowId'))
             port = int(flow_cls.get('destinationPort'))
+            
             if port == 9:
                 try:
+                    numDataFlows +=1    
                     self.packetLoss += flow_map[flowId].packetLossRatio
                     self.delay += flow_map[flowId].delayMean
                     self.jitter += flow_map[flowId].jitterMean
@@ -133,16 +135,6 @@ def main(argv):
                         elem.clear() # won't need this any more
             
 
-    for sim_pair in sim_list.iteritems():
-        protocol = sim_pair[0]
-        sims = sim_pair[1]
-        print "stats for %s" % protocol
-        
-        for sim_pair in sims:
-            sim = sim_pair[0]
-            network_size = sim_pair[1]
-            #print "Network size %d" % network_size
-            #print "delay %f" % sim_pair[0].delay
             
      
     N = len(network_sizes)
@@ -158,6 +150,7 @@ def main(argv):
         results = []
         for sim_pair in sim_list[protocol]:
             results.append(sim_pair[0].throughput)
+        print results
         rects.append(axarr[0][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[0][0].set_ylabel('Throughput (kbit/s)')
     axarr[0][0].set_xlabel('Network size (nodes)')
@@ -174,6 +167,7 @@ def main(argv):
         results = []
         for sim_pair in sim_list[protocol]:
             results.append(sim_pair[0].delay)
+        print results
         rects.append(axarr[0][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[0][1].set_ylabel('Delay (s)')
     axarr[0][1].set_xlabel('Network size (nodes)')
@@ -190,6 +184,7 @@ def main(argv):
         results = []
         for sim_pair in sim_list[protocol]:
             results.append(sim_pair[0].jitter)
+        print results
         rects.append(axarr[1][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[1][0].set_ylabel('Jitter (s)')
     axarr[1][0].set_xlabel('Network size (nodes)')
@@ -206,6 +201,7 @@ def main(argv):
         results = []
         for sim_pair in sim_list[protocol]:
             results.append(sim_pair[0].packetLoss)
+        print results
         rects.append(axarr[1][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[1][1].set_ylabel('Packet loss ratio (%)')
     axarr[1][1].set_xlabel('Network size (nodes)')
@@ -223,6 +219,7 @@ def main(argv):
         results = []
         for sim_pair in sim_list[protocol]:
             results.append(sim_pair[0].packetSizeSent)
+        print results
         rects.append(axarr[2][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[2][0].set_ylabel('Number of control packets')
     axarr[2][0].set_xlabel('Network size (nodes)')
@@ -239,7 +236,9 @@ def main(argv):
         results = []
         for sim_pair in sim_list[protocol]:
             results.append(sim_pair[0].totalEnergy)
+        print results
         rects.append(axarr[2][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
+
     axarr[2][1].set_ylabel('Total energy consumed (joules)')
     axarr[2][1].set_xlabel('Network size (nodes)')
     axarr[2][1].set_title('Energy consumption')
