@@ -18,7 +18,7 @@ def parse_time_ns(tm):
 
 def getCustomStats(protocol, network_size):
     level = 0
-    for event, elem in ElementTree.iterparse(open("%s.custom.5.%d" % (protocol, network_size)), events=("start", "end")):
+    for event, elem in ElementTree.iterparse(open("results_2/%s.custom.5.%d" % (protocol, network_size)), events=("start", "end")):
         if event == "start":
             level += 1
         if event == "end":
@@ -119,7 +119,7 @@ def main(argv):
 
     for protocol in protocols:
         for network_size in network_sizes: 
-            for event, elem in ElementTree.iterparse(open("%s.flomonitor.5.%d" % (protocol, network_size)), events=("start", "end")):
+            for event, elem in ElementTree.iterparse(open("results_2/%s.flomonitor.5.%d" % (protocol, network_size)), events=("start", "end")):
                 if event == "start":
                     level += 1
                 if event == "end":
