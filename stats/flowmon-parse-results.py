@@ -38,7 +38,7 @@ class Flow(object):
         self.rxBytes = int(flow_el.get('rxBytes'))
         self.txBytes = int(flow_el.get('txBytes'))
         self.rxPackets = long(flow_el.get('rxPackets'))
-        txPackets = long(flow_el.get('txPackets'))
+        self.txPackets = long(flow_el.get('txPackets'))
         tx_duration = float(long(flow_el.get('timeLastTxPacket')[:-4]) - long(flow_el.get('timeFirstTxPacket')[:-4]))*1e-9
         rx_duration = float(long(flow_el.get('timeLastRxPacket')[:-4]) - long(flow_el.get('timeFirstRxPacket')[:-4]))*1e-9
         self.rx_duration = rx_duration
@@ -62,10 +62,10 @@ class Flow(object):
         else:
             self.txBitrate = None
 
-        if self.rxPackets == 0:
+        if self.txPackets == 0:
             self.packetLossRatio = None
         else:
-            self.packetLossRatio = (float(flow_el.get('lostPackets')) / txPackets)
+            self.packetLossRatio = (float(flow_el.get('lostPackets')) / self.txPackets) * 100
 
 
 class Simulation(object):
@@ -153,7 +153,7 @@ def main(argv):
         print results
         rects.append(axarr[0][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[0][0].set_ylabel('Throughput (kbit/s)')
-    axarr[0][0].set_xlabel('Network size (nodes)')
+    axarr[0][0].set_xlabel('Network density (nodes)')
     axarr[0][0].set_title('Throughput against network size')
     axarr[0][0].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[0][0].set_xticklabels(tuple(network_sizes))
@@ -170,7 +170,7 @@ def main(argv):
         print results
         rects.append(axarr[0][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[0][1].set_ylabel('Delay (s)')
-    axarr[0][1].set_xlabel('Network size (nodes)')
+    axarr[0][1].set_xlabel('Network density (nodes)')
     axarr[0][1].set_title('End to End delay against network size')
     axarr[0][1].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[0][1].set_xticklabels(tuple(network_sizes))
@@ -187,7 +187,7 @@ def main(argv):
         print results
         rects.append(axarr[1][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[1][0].set_ylabel('Jitter (s)')
-    axarr[1][0].set_xlabel('Network size (nodes)')
+    axarr[1][0].set_xlabel('Network density (nodes)')
     axarr[1][0].set_title('Jitter against network size')
     axarr[1][0].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[1][0].set_xticklabels(tuple(network_sizes))
@@ -204,7 +204,7 @@ def main(argv):
         print results
         rects.append(axarr[1][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[1][1].set_ylabel('Packet loss ratio (%)')
-    axarr[1][1].set_xlabel('Network size (nodes)')
+    axarr[1][1].set_xlabel('Network density (nodes)')
     axarr[1][1].set_title('Packet loss ratio against network size')
     axarr[1][1].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[1][1].set_xticklabels(tuple(network_sizes))
@@ -222,7 +222,7 @@ def main(argv):
         print results
         rects.append(axarr[2][0].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
     axarr[2][0].set_ylabel('Number of control packets')
-    axarr[2][0].set_xlabel('Network size (nodes)')
+    axarr[2][0].set_xlabel('Network density (nodes)')
     axarr[2][0].set_title('Normalised routing overhead against network size')
     axarr[2][0].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[2][0].set_xticklabels(tuple(network_sizes))
@@ -240,7 +240,7 @@ def main(argv):
         rects.append(axarr[2][1].bar((ind*(N*width)+(i*width)), results, width, color=colours[i]))
 
     axarr[2][1].set_ylabel('Total energy consumed (joules)')
-    axarr[2][1].set_xlabel('Network size (nodes)')
+    axarr[2][1].set_xlabel('Network density (nodes)')
     axarr[2][1].set_title('Energy consumption')
     axarr[2][1].set_xticks((((np.arange(N)+(np.arange(N)+1))*(width*10*(N/2)))/10.0)-1.5)
     axarr[2][1].set_xticklabels(tuple(network_sizes))
