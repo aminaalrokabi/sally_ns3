@@ -80,6 +80,7 @@
 #include "ns3/applications-module.h"
 #include "ns3/flow-monitor-helper.h"
 #include "ns3/rectangle.h"
+#include "ns3/energy-module.h"
 
 using namespace ns3;
 using namespace dsr;
@@ -97,20 +98,31 @@ private:
   Ptr<Socket> SetupPacketReceive (Ipv4Address addr, Ptr<Node> node);
   void SetupRoutingPacketReceive (int nodeId,std::string protocolName);
   void ReceivePacket (Ptr<Socket> socket);
-  void ReceiveOLSRPacket (std::string context, const PacketHeader &p, const MessageList &m);
-  void SendOLSRPacket (std::string context, const PacketHeader &p, const MessageList &m);
-  void ReceiveAODVPacket (std::string context, uint32_t i);
-  void SendAODVPacket (std::string context, uint32_t i);
+  void ReceiveOLSRPacket (std::string context, uint32_t packetSize, const PacketHeader &p, const MessageList &m);
+  void SendOLSRPacket (std::string context, uint32_t packetSize, const PacketHeader &p, const MessageList &m);
+  void ReceiveAODVPacket (std::string context, uint32_t packetSize);
+  void SendAODVPacket (std::string context, uint32_t packetSize);
+  void TotalEnergy (double oldValue, double totalEnergy);
 
   int nSinks;
   int nNodes;
   int nPackets;
-  int nControlPackets;
+  int nAodvControlPacketsReceived;
+  int nAodvControlPacketsSent;
+  int nOlsrControlPacketsReceived;
+  int nOlsrControlPacketsSent;
+  int aodvPacketSizeReceived;
+  int aodvPacketSizeSent;
+  int olsrPacketSizeReceived;
+  int olsrPacketSizeSent;
+  double totalEnergy;
   std::string protocolName;
 };
 
 RoutingExperiment::RoutingExperiment ()
-  : nSinks (5), nNodes(20), nPackets(0), nControlPackets(0), protocolName("SALLY")
+  : nSinks (5), nNodes(20), nPackets(0), nAodvControlPacketsReceived(0), nAodvControlPacketsSent(0),
+    nOlsrControlPacketsReceived(0), nOlsrControlPacketsSent(0),
+    aodvPacketSizeReceived(0), aodvPacketSizeSent(0), olsrPacketSizeReceived(0), olsrPacketSizeSent(0), totalEnergy(0), protocolName("SALLY")
 {
 }
 
@@ -148,27 +160,31 @@ RoutingExperiment::ReceivePacket (Ptr<Socket> socket)
 }
 
 void
-RoutingExperiment::ReceiveOLSRPacket (std::string context, const PacketHeader &p, const MessageList &m)
+RoutingExperiment::ReceiveOLSRPacket (std::string context, uint32_t packetSize, const PacketHeader &p, const MessageList &m)
 {
-	nControlPackets++;
+	nOlsrControlPacketsReceived++;
+	olsrPacketSizeReceived += packetSize;
 }
 
 void
-RoutingExperiment::SendOLSRPacket (std::string context, const PacketHeader &p, const MessageList &m)
+RoutingExperiment::SendOLSRPacket (std::string context, uint32_t packetSize, const PacketHeader &p, const MessageList &m)
 {
-	nControlPackets++;
+	nOlsrControlPacketsSent++;
+	olsrPacketSizeSent += packetSize;
 }
 
 void
-RoutingExperiment::ReceiveAODVPacket (std::string context, uint32_t i)
+RoutingExperiment::ReceiveAODVPacket (std::string context, uint32_t packetSize)
 {
-	nControlPackets++;
+	nAodvControlPacketsReceived++;
+	aodvPacketSizeReceived += packetSize;
 }
 
 void
-RoutingExperiment::SendAODVPacket (std::string context, uint32_t i)
+RoutingExperiment::SendAODVPacket (std::string context, uint32_t packetSize)
 {
-	nControlPackets++;
+	nAodvControlPacketsSent++;
+	aodvPacketSizeSent += packetSize;
 }
 
 
@@ -195,6 +211,12 @@ RoutingExperiment::SetupRoutingPacketReceive (int nodeId, std::string protocolNa
   }
 
 
+}
+
+void
+RoutingExperiment::TotalEnergy (double oldValue, double energy)
+{
+	totalEnergy += energy;
 }
 
 Ptr<Socket>
@@ -294,15 +316,37 @@ RoutingExperiment::Run (double txp)
                                     "Speed", StringValue (ssSpeed.str ()),
                                     "Pause", StringValue (ssPause.str ()),
                                     "PositionAllocator", PointerValue (taPositionAlloc));
+   /*
+   mobilityAdhoc.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
    mobilityAdhoc.SetPositionAllocator (taPositionAlloc);
+  */
+
 
   mobilityAdhoc.Install (adhocNodes);
+
+  /** Energy Model **/
+    /***************************************************************************/
+    /* energy source */
+    BasicEnergySourceHelper basicSourceHelper;
+    // configure energy source
+    basicSourceHelper.Set ("BasicEnergySourceInitialEnergyJ", DoubleValue (0.1));
+    // install source
+    EnergySourceContainer sources = basicSourceHelper.Install (adhocNodes);
+    /* device energy model */
+    WifiRadioEnergyModelHelper radioEnergyHelper;
+    // configure radio energy model
+    radioEnergyHelper.Set ("TxCurrentA", DoubleValue (0.0174));
+    // install device model
+    DeviceEnergyModelContainer deviceModels = radioEnergyHelper.Install (adhocDevices, sources);
+    /***************************************************************************/
+
   streamIndex += mobilityAdhoc.AssignStreams (adhocNodes, streamIndex);
 
   AodvHelper aodv;
   OlsrHelper olsr;
   DsdvHelper dsdv;
   DsrHelper dsr;
+  SallyHelper sally;
 
   DsrMainHelper dsrMain;
   Ipv4ListRoutingHelper list;
@@ -322,7 +366,6 @@ RoutingExperiment::Run (double txp)
       internet.SetRoutingHelper (list);
       internet.Install (adhocNodes);
     } else if (protocolName =="SALLY") {
-      SallyHelper sally;
       sally.SetNumberHybridNodes(nNodes);
       internet.SetRoutingHelper (sally);
       internet.Install (adhocNodes);
@@ -340,8 +383,21 @@ RoutingExperiment::Run (double txp)
   onoff1.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1.0]"));
   onoff1.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0.0]"));
 
+  Ptr<BasicEnergySource> basicSourcePtr;
+  Ptr<DeviceEnergyModel> basicRadioModelPtr;
+
   for (int i=0; i< nNodes; i++) {
 	  SetupRoutingPacketReceive (i, protocolName);
+
+	  /** connect trace sources **/
+	  /***************************************************************************/
+	  // all sources are connected to node 1
+	  // energy source
+	  basicSourcePtr = DynamicCast<BasicEnergySource> (sources.Get (i));
+	  // device energy model
+	  basicRadioModelPtr = basicSourcePtr->FindDeviceEnergyModels ("ns3::WifiRadioEnergyModel").Get (0);
+	  basicRadioModelPtr->TraceConnectWithoutContext ("TotalEnergyConsumption", MakeCallback (&RoutingExperiment::TotalEnergy, this));
+	  /***************************************************************************/
   }
   for (int i = 0; i <= nSinks - 1; i++)
     {
@@ -356,26 +412,40 @@ RoutingExperiment::Run (double txp)
       temp.Stop (Seconds (TotalTime));
     }
 
+
   AsciiTraceHelper ascii;
     MobilityHelper::EnableAsciiAll (ascii.CreateFileStream (tr_name + ".mob"));
-
+    wifiPhy.EnablePcap ("wifi-simple-adhoc-grid", adhocDevices);
   Ptr<FlowMonitor> flowmon;
   FlowMonitorHelper flowmonHelper;
   flowmon = flowmonHelper.InstallAll ();
+
+  Ptr<OutputStreamWrapper> routingStream = Create<OutputStreamWrapper> ("wifi-simple-adhoc-grid.routes", std::ios::out);
+  sally.PrintRoutingTableAllEvery (Seconds (2), routingStream);
 
   NS_LOG_INFO ("Run Simulation.");
 
   Simulator::Stop (Seconds (TotalTime));
   Simulator::Run ();
   std::ostringstream filename;
-  filename << protocolName << ".flomonitor.3." << nNodes;
+  filename << protocolName << ".flomonitor.5." << nNodes;
   flowmon->SerializeToXmlFile(filename.str().c_str(), false, false);
 
   std::ostringstream filename2;
-  filename2 << protocolName << ".custom.3." << nNodes;
+  filename2 << protocolName << ".custom.5." << nNodes;
   std::ofstream os (filename2.str().c_str(), std::ios::out|std::ios::binary);
   os << "<?xml version=\"1.0\" ?>\n";
-  os << "<CustomStats>\n<RoutingStats numPackets=\"" << nPackets << "\" numControlPackets=\"" << nControlPackets << "\" />\n</CustomStats>";
+  os << "<CustomStats>\n<RoutingStats numPackets=\"" << nPackets
+		  << "\" nAodvControlPacketsReceived=\"" << nAodvControlPacketsReceived
+		  << "\" nAodvControlPacketsSent=\"" << nAodvControlPacketsSent
+		  << "\" nOlsrControlPacketsReceived=\"" << nOlsrControlPacketsReceived
+		  << "\" nOlsrControlPacketsSent=\"" << nOlsrControlPacketsSent
+		  << "\" aodvPacketSizeReceived=\"" << aodvPacketSizeReceived
+		  << "\" aodvPacketSizeSent=\"" << aodvPacketSizeSent
+		  << "\" olsrPacketSizeReceived=\"" << olsrPacketSizeReceived
+		  << "\" olsrPacketSizeSent=\"" << olsrPacketSizeSent
+		  << "\" totalEnergy=\"" << totalEnergy
+		  << "\" />\n</CustomStats>";
   os.close();
   Simulator::Destroy ();
 }
